@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -15,24 +15,48 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-
 async function run() {
   try {
     // database collection
-    const database = client.db('medicareDB');
-    const medicineCollection = database.collection('medicines');
-    const userCollection = database.collection('users');
-    const pharmacistCollection = database.collection('pharmacists');
-    const medicineCarCollection = database.collection('medicinesCart');
+    const database = client.db("medicareDB");
+    const medicineCollection = database.collection("medicines");
+    const userCollection = database.collection("users");
+    const pharmacistCollection = database.collection("pharmacists");
+    const medicineCarCollection = database.collection("medicinesCart");
+    const labCategoryCollection = database.collection("labCategory");
+    const labItemsCollection = database.collection("labItems");
 
     // medicines apis
-
 
     // users apis
 
     // pharmacist apis
 
+    // lab api
+    app.get("/labCategories", async (req, res) => {
+      const result = await labCategoryCollection.find().toArray();
+      res.send(result);
+    });
 
+    app.get("/labCategory/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await labCategoryCollection.find({ _id: new ObjectId(id) }).toArray();
+      res.send(result);
+    });
+
+    
+    app.get("/labPopularItems", async (req, res) => {
+      const query = { category: "Popular" };
+      const result = await labItemsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/labItems/:category", async (req, res) => {
+      const result = await labItemsCollection.find({ category_name: req.params.category }).toArray();
+      res.send(result);
+    });
+
+    
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -41,10 +65,10 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-    res.send('Medicare Server is running...');
+app.get("/", (req, res) => {
+  res.send("Medicare Server is running...");
 });
 
 app.listen(port, () => {
-    console.log(`Medicare is running on port ${5000}`);
-})
+  console.log(`Medicare is running on port ${5000}`);
+});

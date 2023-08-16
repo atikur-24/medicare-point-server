@@ -30,6 +30,8 @@ async function run() {
 
     // users apis
 
+    // pharmacist apis
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

@@ -31,6 +31,7 @@ async function run() {
     // users apis
 
     // pharmacist apis
+    // sihab molla
 
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

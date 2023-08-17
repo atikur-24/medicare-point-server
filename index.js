@@ -31,7 +31,6 @@ async function run() {
     // users apis
 
     // pharmacist apis
-    // sihab molla
 
     // lab api
     app.get("/labCategories", async (req, res) => {
@@ -45,7 +44,7 @@ async function run() {
       res.send(result);
     });
 
-    
+
     app.get("/labPopularItems", async (req, res) => {
       const query = { category: "Popular" };
       const result = await labItemsCollection.find(query).toArray();
@@ -57,7 +56,7 @@ async function run() {
       res.send(result);
     });
 
-    
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

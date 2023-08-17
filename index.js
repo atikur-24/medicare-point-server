@@ -27,6 +27,17 @@ async function run() {
     const labItemsCollection = database.collection("labItems");
 
     // medicines apis
+    app.get('/medicines', async(req, res) => {
+      const result = await medicineCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/medicines/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await medicineCollection.findOne(query);
+      res.send(result);
+    })
 
     // users apis
 

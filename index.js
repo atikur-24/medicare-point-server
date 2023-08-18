@@ -22,7 +22,7 @@ async function run() {
     const medicineCollection = database.collection("medicines");
     const userCollection = database.collection("users");
     const pharmacistCollection = database.collection("pharmacists");
-    const medicineCarCollection = database.collection("medicinesCart");
+    const CartCollection = database.collection("medicinesCart");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
 
@@ -30,12 +30,32 @@ async function run() {
     app.get('/medicines', async(req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
-    })
-
+    });
     app.get('/medicines/:id', async(req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await medicineCollection.findOne(query);
+      res.send(result);
+    });
+
+    // carts related apis
+    app.get('/medicineCarts', async(req, res) => {
+      const result = await CartCollection.find().toArray();
+      res.send(result)
+    });
+    app.post('/medicineCarts', async(req, res) => {
+      const medicine = req.body;
+      const result = await CartCollection.insertOne(medicine);
+      res.send(result);
+    })
+    app.delete('/medicineCarts/:id', async(req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await CartCollection.deleteOne(query);
+      res.send(result);
+    })
+    app.delete('/medicineCarts', async(req, res) => {
+      const result = await CartCollection.deleteMany();
       res.send(result);
     })
 

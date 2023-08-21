@@ -64,6 +64,7 @@ async function run() {
     // pharmacist apis
 
     // lab api
+
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
       res.send(result);
@@ -75,7 +76,17 @@ async function run() {
       res.send(result);
     });
 
-    
+    app.get("/labAllItems", async (req, res) => {
+      const result = await labItemsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/labAllItems/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
     app.get("/labPopularItems", async (req, res) => {
       const query = { category: "Popular" };
       const result = await labItemsCollection.find(query).toArray();
@@ -87,7 +98,19 @@ async function run() {
       res.send(result);
     });
 
-    
+    app.post("/labItems", async (req, res) => {
+      const lab = req.body;
+      const result = await labItemsCollection.insertOne(lab);
+      res.send(result);
+    });
+
+    app.delete("/labItems/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await labItemsCollection.deleteOne(query);
+      res.send(result);
+    });
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

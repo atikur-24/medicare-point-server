@@ -85,6 +85,7 @@ async function run() {
 
 
     // lab api
+
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
       res.send(result);

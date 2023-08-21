@@ -27,11 +27,11 @@ async function run() {
     const labItemsCollection = database.collection("labItems");
 
     // medicines apis
-    app.get('/medicines', async(req, res) => {
+    app.get('/medicines', async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     });
-    app.get('/medicines/:id', async(req, res) => {
+    app.get('/medicines/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await medicineCollection.findOne(query);
@@ -39,27 +39,27 @@ async function run() {
     });
 
     // carts related apis
-    app.get('/medicineCarts', async(req, res) => {
+    app.get('/medicineCarts', async (req, res) => {
       const result = await CartCollection.find().toArray();
       res.send(result)
     });
-    app.post('/medicineCarts', async(req, res) => {
+    app.post('/medicineCarts', async (req, res) => {
       const medicine = req.body;
       const result = await CartCollection.insertOne(medicine);
       res.send(result);
     })
-    app.delete('/medicineCarts/:id', async(req, res) => {
+    app.delete('/medicineCarts/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await CartCollection.deleteOne(query);
       res.send(result);
     })
-    app.delete('/medicineCarts', async(req, res) => {
+    app.delete('/medicineCarts', async (req, res) => {
       const result = await CartCollection.deleteMany();
       res.send(result);
     })
 
-    // users apis
+    // users apis here
 
     // pharmacist apis
 
@@ -75,7 +75,7 @@ async function run() {
       res.send(result);
     });
 
-    
+
     app.get("/labPopularItems", async (req, res) => {
       const query = { category: "Popular" };
       const result = await labItemsCollection.find(query).toArray();
@@ -87,7 +87,7 @@ async function run() {
       res.send(result);
     });
 
-    
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

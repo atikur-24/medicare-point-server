@@ -124,6 +124,22 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/labItems/:id", async (req, res) => {
+      const id = req.params.id;
+      const { body } = req.body;
+      const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updatedLabTest = {
+        // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
+        $set: { ...body }
+      };
+      const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
+      res.send(result);
+    });
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

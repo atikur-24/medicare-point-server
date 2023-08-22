@@ -26,6 +26,7 @@ async function run() {
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
     const blogCollection = database.collection("blogs");
+    const interviewCollection = database.collection("interviews");
 
     // medicines apis
     app.get("/medicines", async (req, res) => {
@@ -150,6 +151,16 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.findOne(query);
+      res.send(result);
+    });
+    app.get("/interviews", async (req, res) => {
+      const result = await interviewCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/interviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await interviewCollection.findOne(query);
       res.send(result);
     });
 

@@ -25,6 +25,7 @@ async function run() {
     const CartCollection = database.collection("medicinesCart");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
+    const blogCollection = database.collection("blogs");
 
     // medicines apis
     app.get("/medicines", async (req, res) => {
@@ -137,6 +138,18 @@ async function run() {
         $set: { ...body }
       };
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
+      res.send(result);
+    });
+
+    // blog related apis
+    app.get("/blogs", async (req, res) => {
+      const result = await blogCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogCollection.findOne(query);
       res.send(result);
     });
 

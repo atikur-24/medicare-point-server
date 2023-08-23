@@ -155,7 +155,7 @@ async function run() {
       res.send(result);
     });
 
-    // blog related apiss
+    // blog related apis
     app.get("/blogs", async (req, res) => {
       const result = await blogCollection.find().toArray();
       res.send(result);

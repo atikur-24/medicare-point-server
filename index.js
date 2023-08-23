@@ -22,6 +22,7 @@ async function run() {
     const medicineCollection = database.collection("medicines");
     const userCollection = database.collection("users");
     const pharmacistCollection = database.collection("pharmacists");
+    const pharmacyRegistrationApplication = database.collection("pharmacists");
     const CartCollection = database.collection("medicinesCart");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
@@ -185,6 +186,20 @@ async function run() {
       const result = await interviewCollection.findOne(query);
       res.send(result);
     });
+
+    // Pharmacy Registration application
+    app.post('/pharmacyRegistrationApplication', async (req, res) => {
+      const newApplication = req.body;
+      const result = await pharmacyRegistrationApplication.insertOne(newApplication);
+      res.send(result);
+    });
+
+    app.get('/pharmacyRegistrationApplications', async (req, res) => {
+      const result = await pharmacyRegistrationApplication.find().toArray();
+      res.send(result);
+    });
+
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

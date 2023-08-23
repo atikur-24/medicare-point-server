@@ -143,7 +143,7 @@ async function run() {
       res.send(result);
     });
 
-    // Health tips api here
+    // Health tips api here use it
     app.get("/allHealthTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);
@@ -152,6 +152,12 @@ async function run() {
     app.post("/addHealthTips", async (req, res) => {
       const tips = req.body;
       const result = await healthTipsCollection.insertOne(tips);
+      res.send(result);
+    });
+
+    app.get("/allHealthTips/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await healthTipsCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 

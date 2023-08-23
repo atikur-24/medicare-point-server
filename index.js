@@ -143,20 +143,17 @@ async function run() {
       res.send(result);
     });
 
-
-
-    // Health tips 
-    app.get("/allHeathTips", async (req, res) => {
+    // Health tips
+    app.get("/allHealthTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);
-    })
+    });
 
-    app.post("/addHeathTips", async (req, res) => {
+    app.post("/addHealthTips", async (req, res) => {
       const tips = req.body;
       const result = await healthTipsCollection.insertOne(tips);
       res.send(result);
-    })
-
+    });
 
     // blog related apis
     app.get("/blogs", async (req, res) => {

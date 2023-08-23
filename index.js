@@ -143,8 +143,8 @@ async function run() {
       res.send(result);
     });
 
-    // Health tipss try
-    app.get("/allHeathTips", async (req, res) => {
+    // Health tips api here
+    app.get("/allHealthTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);
     });

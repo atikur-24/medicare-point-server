@@ -144,7 +144,7 @@ async function run() {
     });
 
     // Health tips
-    app.get("/allHealthTips", async (req, res) => {
+    app.get("/allHeathTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);
     });

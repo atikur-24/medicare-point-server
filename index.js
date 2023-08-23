@@ -25,6 +25,7 @@ async function run() {
     const CartCollection = database.collection("medicinesCart");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
+    const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
     const interviewCollection = database.collection("interviews");
 
@@ -129,7 +130,7 @@ async function run() {
     app.patch("/labItems/:id", async (req, res) => {
       const id = req.params.id;
       const { body } = req.body;
-      const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
+      // const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
 
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -141,6 +142,21 @@ async function run() {
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
+
+
+
+    // Health tips 
+    app.get("/allHeathTips", async (req, res) => {
+      const result = await healthTipsCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post("/addHeathTips", async (req, res) => {
+      const tips = req.body;
+      const result = await healthTipsCollection.insertOne(tips);
+      res.send(result);
+    })
+
 
     // blog related apis
     app.get("/blogs", async (req, res) => {

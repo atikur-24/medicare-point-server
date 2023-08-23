@@ -78,7 +78,7 @@ async function run() {
       res.send(result);
     });
 
-    // lab api
+    // lab apii
 
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
@@ -136,7 +136,7 @@ async function run() {
 
       const updatedLabTest = {
         // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
-        $set: { ...body }
+        $set: { ...body },
       };
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);

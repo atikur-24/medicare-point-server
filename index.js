@@ -23,8 +23,10 @@ async function run() {
     const userCollection = database.collection("users");
     const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
+    const pharmacyRegistrationApplication = database.collection("pharmacists");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
+    const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
     const interviewCollection = database.collection("interviews");
 
@@ -146,7 +148,7 @@ async function run() {
     app.patch("/labItems/:id", async (req, res) => {
       const id = req.params.id;
       const { body } = req.body;
-      const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
+      // const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
 
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -158,6 +160,27 @@ async function run() {
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
+
+
+
+    // Health tips api here use it
+    app.get("/allHealthTips", async (req, res) => {
+      const result = await healthTipsCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post("/addHealthTips", async (req, res) => {
+      const tips = req.body;
+      const result = await healthTipsCollection.insertOne(tips);
+      res.send(result);
+    })
+
+    app.get("/allHealthTips/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await healthTipsCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
 
     // blog related apis
     app.get("/blogs", async (req, res) => {
@@ -180,6 +203,20 @@ async function run() {
       const result = await interviewCollection.findOne(query);
       res.send(result);
     });
+
+    // Pharmacy Registration application
+    app.post('/pharmacyRegistrationApplication', async (req, res) => {
+      const newApplication = req.body;
+      const result = await pharmacyRegistrationApplication.insertOne(newApplication);
+      res.send(result);
+    });
+
+    app.get('/pharmacyRegistrationApplications', async (req, res) => {
+      const result = await pharmacyRegistrationApplication.find().toArray();
+      res.send(result);
+    });
+
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

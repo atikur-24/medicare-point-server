@@ -151,6 +151,7 @@ async function run() {
 
     app.post("/addHealthTips", async (req, res) => {
       const tips = req.body;
+      console.log(tips);
       const result = await healthTipsCollection.insertOne(tips);
       res.send(result);
     });

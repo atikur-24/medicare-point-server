@@ -25,45 +25,61 @@ async function run() {
     const CartCollection = database.collection("medicinesCart");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
+    const blogCollection = database.collection("blogs");
+    const interviewCollection = database.collection("interviews");
 
     // medicines apis
-    app.get('/medicines', async(req, res) => {
+    app.get("/medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     });
-    app.get('/medicines/:id', async(req, res) => {
+    app.get("/medicines/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
+      const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
       res.send(result);
     });
 
     // carts related apis
-    app.get('/medicineCarts', async(req, res) => {
+    app.get("/medicineCarts", async (req, res) => {
       const result = await CartCollection.find().toArray();
-      res.send(result)
+      res.send(result);
     });
-    app.post('/medicineCarts', async(req, res) => {
+    app.post("/medicineCarts", async (req, res) => {
       const medicine = req.body;
       const result = await CartCollection.insertOne(medicine);
       res.send(result);
-    })
-    app.delete('/medicineCarts/:id', async(req, res) => {
-      const id = req.params.id
-      const query = { _id: new ObjectId(id) }
+    });
+    app.delete("/medicineCarts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await CartCollection.deleteOne(query);
       res.send(result);
-    })
-    app.delete('/medicineCarts', async(req, res) => {
+    });
+    app.delete("/medicineCarts", async (req, res) => {
       const result = await CartCollection.deleteMany();
       res.send(result);
-    })
+    });
 
     // users apis
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User Already has been Create" });
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
 
-    // pharmacist apis
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
 
     // lab api
+
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
       res.send(result);
@@ -75,7 +91,17 @@ async function run() {
       res.send(result);
     });
 
-    
+    app.get("/labAllItems", async (req, res) => {
+      const result = await labItemsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/labAllItems/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
     app.get("/labPopularItems", async (req, res) => {
       const query = { category: "Popular" };
       const result = await labItemsCollection.find(query).toArray();
@@ -87,7 +113,57 @@ async function run() {
       res.send(result);
     });
 
-    
+    app.post("/labItems", async (req, res) => {
+      const lab = req.body;
+      const result = await labItemsCollection.insertOne(lab);
+      res.send(result);
+    });
+
+    app.delete("/labItems/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await labItemsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.patch("/labItems/:id", async (req, res) => {
+      const id = req.params.id;
+      const { body } = req.body;
+      const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updatedLabTest = {
+        // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
+        $set: { ...body }
+      };
+      const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
+      res.send(result);
+    });
+
+    // blog related apis
+    app.get("/blogs", async (req, res) => {
+      const result = await blogCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogCollection.findOne(query);
+      res.send(result);
+    });
+    app.get("/interviews", async (req, res) => {
+      const result = await interviewCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/interviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await interviewCollection.findOne(query);
+      res.send(result);
+    });
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

@@ -145,7 +145,7 @@ async function run() {
 
 
 
-    // Health tips 
+    // Health tips api here
     app.get("/allHealthTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);

@@ -23,7 +23,7 @@ async function run() {
     const userCollection = database.collection("users");
     const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
-    const pharmacyRegistrationApplication = database.collection("pharmacists");
+    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
     const labCartCollection = database.collection("labsCart");
@@ -47,7 +47,7 @@ async function run() {
     app.get("/medicineCarts", async (req, res) => {
       const email = req.query.email;
       if (!email) {
-        res.send({message: "Empty Cart"});
+        res.send({ message: "Empty Cart" });
       }
       const query = { email: email };
       const result = await mediCartCollection.find(query).toArray();
@@ -230,12 +230,20 @@ async function run() {
     app.put("/pharmacyRApprove/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      const updateAType = req.body;
+      const email = req.body.email
       const newApplication = {
-        $set: updateAType
+        $set: {
+          applicationType: "Approved"
+        }
       }
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
-      res.send(result);
+      const updateUser = {
+        $set: {
+          role: "Pharmacist"
+        }
+      }
+      const result2 = await userCollection.updateOne({ email: email }, updateUser);
+      res.send({ result, result2 });
     });
 
     app.delete('/deleteRApplication/:id', async (req, res) => {

@@ -207,7 +207,27 @@ async function run() {
       res.send(result);
     });
 
-    // blog related apis
+    app.delete("/allHealthTips/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await healthTipsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.patch("/allHealthTips/:id", async (req, res) => {
+      const id = req.params.id;
+      const { body } = req.body;
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updatedLabTest = {
+        $set: { ...body },
+      };
+      const result = await healthTipsCollection.updateOne(filter, updatedLabTest, options);
+      res.send(result);
+    });
+
     // =========== Blog Related apis ===========
     app.get("/blogs", async (req, res) => {
       const result = await blogCollection.find().toArray();

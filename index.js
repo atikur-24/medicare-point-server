@@ -160,7 +160,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/labsCart/:id", async (req, res) => {
+    app.delete("/labCart/:id", async (req, res) => {
       const id = req.params.id;
       const result = await labCartCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);

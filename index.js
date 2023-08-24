@@ -44,40 +44,40 @@ async function run() {
     });
 
     // =========== Medicines Cart Related apis ===========
-    app.get('/medicineCarts', async(req, res) => {
+    app.get("/medicineCarts", async (req, res) => {
       const email = req.query.email;
-      if(!email) {
-        res.send([])
+      if (!email) {
+        res.send([]);
       }
       const query = { email: email };
-      const result = await  mediCartCollection.find(query).toArray();
+      const result = await mediCartCollection.find(query).toArray();
       res.send(result);
     });
     app.post("/medicineCarts", async (req, res) => {
       const medicine = req.body;
       const filterMedicine = { medicine_Id: medicine.medicine_Id };
       const singleMedicine = await mediCartCollection.findOne(filterMedicine);
-      if(singleMedicine) {
+      if (singleMedicine) {
         const updateDoc = {
           $set: {
             quantity: singleMedicine.quantity + medicine.quantity,
-          }
-        }
+          },
+        };
         const updateQuantity = await mediCartCollection.updateOne(filterMedicine, updateDoc);
-        res.send(updateQuantity)
+        res.send(updateQuantity);
       } else {
-        const result = await  mediCartCollection.insertOne(medicine);
+        const result = await mediCartCollection.insertOne(medicine);
         res.send(result);
       }
     });
     app.delete("/medicineCarts/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await  mediCartCollection.deleteOne(query);
+      const result = await mediCartCollection.deleteOne(query);
       res.send(result);
     });
     app.delete("/medicineCarts", async (req, res) => {
-      const result = await  mediCartCollection.deleteMany();
+      const result = await mediCartCollection.deleteMany();
       res.send(result);
     });
 
@@ -138,25 +138,31 @@ async function run() {
 
       const updatedLabTest = {
         // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
-        $set: { ...body }
+        $set: { ...body },
       };
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
 
     // =========== Lab Test Cart Related apis ===========
-    app.get('/labsCart', async(req, res) => {
+    app.get("/labsCart", async (req, res) => {
       const email = req.query.email;
-      if(!email) {
-        res.send([])
+      if (!email) {
+        res.send([]);
       }
       const query = { email: email };
-      const result = await  labCartCollection.find(query).toArray();
+      const result = await labCartCollection.find(query).toArray();
       res.send(result);
     });
-    app.post('/labsCart', async(req, res) => {
+    app.post("/labsCart", async (req, res) => {
       const labCart = req.body;
       const result = await labCartCollection.insertOne(labCart);
+      res.send(result);
+    });
+
+    app.delete("/labsCart/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await labCartCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 
@@ -164,20 +170,19 @@ async function run() {
     app.get("/allHealthTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     app.post("/addHealthTips", async (req, res) => {
       const tips = req.body;
       const result = await healthTipsCollection.insertOne(tips);
       res.send(result);
-    })
+    });
 
     app.get("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
       const result = await healthTipsCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
     });
-
 
     // =========== Blog Related apis ===========
     app.get("/blogs", async (req, res) => {
@@ -202,13 +207,13 @@ async function run() {
     });
 
     // =========== Pharmacist Related apis ===========
-    app.post('/pharmacyRegistrationApplication', async (req, res) => {
+    app.post("/pharmacyRegistrationApplication", async (req, res) => {
       const newApplication = req.body;
       const result = await pharmacyRegistrationApplication.insertOne(newApplication);
       res.send(result);
     });
 
-    app.get('/pharmacyRegistrationApplications', async (req, res) => {
+    app.get("/pharmacyRegistrationApplications", async (req, res) => {
       const result = await pharmacyRegistrationApplication.find().toArray();
       res.send(result);
     });

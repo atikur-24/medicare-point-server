@@ -26,11 +26,12 @@ async function run() {
     const pharmacyRegistrationApplication = database.collection("pharmacists");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
+    const labCartCollection = database.collection("labsCart");
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
     const interviewCollection = database.collection("interviews");
 
-    // medicines apis
+    // =========== Medicines Related apis ===========
     app.get("/medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
@@ -42,7 +43,7 @@ async function run() {
       res.send(result);
     });
 
-    // carts related apis
+    // =========== Medicines Cart Related apis ===========
     app.get('/medicineCarts', async(req, res) => {
       const email = req.query.email;
       if(!email) {
@@ -80,25 +81,7 @@ async function run() {
       res.send(result);
     });
 
-    // users apis
-    app.post("/users", async (req, res) => {
-      const user = req.body;
-      const query = { email: user.email };
-      const existingUser = await userCollection.findOne(query);
-      if (existingUser) {
-        return res.send({ message: "User Already has been Create" });
-      }
-      const result = await userCollection.insertOne(user);
-      res.send(result);
-    });
-
-    app.get("/users", async (req, res) => {
-      const result = await userCollection.find().toArray();
-      res.send(result);
-    });
-
-    // lab api
-
+    // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
       res.send(result);
@@ -161,9 +144,23 @@ async function run() {
       res.send(result);
     });
 
+    // =========== Lab Test Cart Related apis ===========
+    app.get('/labsCart', async(req, res) => {
+      const email = req.query.email;
+      if(!email) {
+        res.send([])
+      }
+      const query = { email: email };
+      const result = await  labCartCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.post('/labsCart', async(req, res) => {
+      const labCart = req.body;
+      const result = await labCartCollection.insertOne(labCart);
+      res.send(result);
+    });
 
-
-    // Health tips api here use it
+    // =========== Health Tips Related apis ===========
     app.get("/allHealthTips", async (req, res) => {
       const result = await healthTipsCollection.find().toArray();
       res.send(result);
@@ -182,7 +179,7 @@ async function run() {
     });
 
 
-    // blog related apis
+    // =========== Blog Related apis ===========
     app.get("/blogs", async (req, res) => {
       const result = await blogCollection.find().toArray();
       res.send(result);
@@ -204,7 +201,7 @@ async function run() {
       res.send(result);
     });
 
-    // Pharmacy Registration application
+    // =========== Pharmacist Related apis ===========
     app.post('/pharmacyRegistrationApplication', async (req, res) => {
       const newApplication = req.body;
       const result = await pharmacyRegistrationApplication.insertOne(newApplication);
@@ -216,7 +213,22 @@ async function run() {
       res.send(result);
     });
 
+    // =========== Users Related apis ===========
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User Already has been Create" });
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
 
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

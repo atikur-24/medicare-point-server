@@ -47,7 +47,7 @@ async function run() {
     app.get("/medicineCarts", async (req, res) => {
       const email = req.query.email;
       if (!email) {
-        res.send({message: "Empty Cart"});
+        res.send({ message: "Empty Cart" });
       }
       const query = { email: email };
       const result = await mediCartCollection.find(query).toArray();
@@ -183,6 +183,27 @@ async function run() {
     app.get("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
       const result = await healthTipsCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    app.delete("/allHealthTips/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await healthTipsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.patch("/allHealthTips/:id", async (req, res) => {
+      const id = req.params.id;
+      const { body } = req.body;
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updatedLabTest = {
+        $set: { ...body },
+      };
+      const result = await healthTipsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
 

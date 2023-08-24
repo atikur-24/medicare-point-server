@@ -47,7 +47,7 @@ async function run() {
     app.get("/medicineCarts", async (req, res) => {
       const email = req.query.email;
       if (!email) {
-        res.send([]);
+        res.send({message: "Empty Cart"});
       }
       const query = { email: email };
       const result = await mediCartCollection.find(query).toArray();
@@ -55,7 +55,7 @@ async function run() {
     });
     app.post("/medicineCarts", async (req, res) => {
       const medicine = req.body;
-      const filterMedicine = { medicine_Id: medicine.medicine_Id };
+      const filterMedicine = { medicine_Id: medicine.medicine_Id, email: medicine.email };
       const singleMedicine = await mediCartCollection.findOne(filterMedicine);
       if (singleMedicine) {
         const updateDoc = {
@@ -77,7 +77,9 @@ async function run() {
       res.send(result);
     });
     app.delete("/medicineCarts", async (req, res) => {
-      const result = await mediCartCollection.deleteMany();
+      const email = req.query.email;
+      const query = { email: email }
+      const result = await mediCartCollection.deleteMany(query);
       res.send(result);
     });
 

@@ -22,7 +22,7 @@ async function run() {
     const medicineCollection = database.collection("medicines");
     const userCollection = database.collection("users");
     const pharmacistCollection = database.collection("pharmacists");
-    const pharmacyRegistrationApplication = database.collection("pharmacists");
+    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
     const CartCollection = database.collection("medicinesCart");
     const labCategoryCollection = database.collection("labCategory");
     const labItemsCollection = database.collection("labItems");
@@ -196,6 +196,31 @@ async function run() {
 
     app.get('/pharmacyRegistrationApplications', async (req, res) => {
       const result = await pharmacyRegistrationApplication.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/pharmacyRegistrationApl/:id", async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await pharmacyRegistrationApplication.findOne(query);
+      res.send(result);
+    });
+
+    app.put("/pharmacyRApprove/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const updateAType = req.body;
+      const newApplication = {
+        $set: updateAType
+      }
+      const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
+      res.send(result);
+    });
+
+    app.delete('/deleteRApplication/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await pharmacyRegistrationApplication.deleteOne(query);
       res.send(result);
     });
 

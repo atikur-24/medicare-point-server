@@ -78,7 +78,7 @@ async function run() {
     });
     app.delete("/medicineCarts", async (req, res) => {
       const email = req.query.email;
-      const query = { email: email }
+      const query = { email: email };
       const result = await mediCartCollection.deleteMany(query);
       res.send(result);
     });
@@ -195,15 +195,16 @@ async function run() {
 
     app.patch("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
-      const { body } = req.body;
-
+      // const { body } = req.body;
+      console.log(id, req.body);
+      const { category, name, image, type, cause, cure, prevention } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
-      const updatedLabTest = {
-        $set: { ...body },
+      const updatedHealthTips = {
+        $set: { category, name, image, type, cause, cure, prevention },
       };
-      const result = await healthTipsCollection.updateOne(filter, updatedLabTest, options);
+      const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);
     });
 

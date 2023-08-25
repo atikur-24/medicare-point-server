@@ -227,7 +227,7 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/pharmacyRApprove/:id", async (req, res) => {
+    app.patch("/pharmacyRApprove/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const email = req.body.email
@@ -269,6 +269,18 @@ async function run() {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
+
+    // update user Role
+    app.patch("/updateUserRole/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const newRole = {
+        $set: req.body
+      };
+      const result = await userCollection.updateOne(query, newRole);
+      res.send(result);
+    });
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

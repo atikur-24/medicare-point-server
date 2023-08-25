@@ -83,25 +83,6 @@ async function run() {
       res.send(result);
     });
 
-    // users apis
-    app.post("/users", async (req, res) => {
-      const user = req.body;
-      const query = { email: user.email };
-      const existingUser = await userCollection.findOne(query);
-      if (existingUser) {
-        return res.send({ message: "User Already has been Create" });
-      }
-      const result = await userCollection.insertOne(user);
-      res.send(result);
-    });
-
-    app.get("/users", async (req, res) => {
-      const result = await userCollection.find().toArray();
-      res.send(result);
-    });
-
-    // lab apii
-
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
@@ -165,7 +146,6 @@ async function run() {
       res.send(result);
     });
 
-    // Health tips api here use it
     // =========== Lab Test Cart Related apis ===========
     app.get("/labsCart", async (req, res) => {
       const email = req.query.email;
@@ -196,7 +176,6 @@ async function run() {
 
     app.post("/addHealthTips", async (req, res) => {
       const tips = req.body;
-      console.log(tips);
       const result = await healthTipsCollection.insertOne(tips);
       res.send(result);
     });
@@ -216,15 +195,16 @@ async function run() {
 
     app.patch("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
-      const { body } = req.body;
-
+      // const { body } = req.body;
+      console.log(id, req.body);
+      const { category, name, image, type, cause, cure, prevention } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
-      const updatedLabTest = {
-        $set: { ...body },
+      const updatedHealthTips = {
+        $set: { category, name, image, type, cause, cure, prevention },
       };
-      const result = await healthTipsCollection.updateOne(filter, updatedLabTest, options);
+      const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);
     });
 

@@ -50,7 +50,7 @@ async function run() {
         query = { medicine_name: { $regex: sbn, $options: "i" } };
       }
 
-      // console.log(sbc, sbn)
+      // console.log(sbc, sbn) ff
 
       const result = await medicineCollection.find(query).toArray();
       res.send(result);

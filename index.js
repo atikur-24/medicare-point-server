@@ -33,9 +33,20 @@ async function run() {
 
     // =========== Medicines Related apis ===========
     app.get("/medicines", async (req, res) => {
+      // console.log("hitted")
       const result = await medicineCollection.find().toArray();
       res.send(result);
     });
+
+
+    app.get("/medicines/:category", async (req, res) => {
+      console.log("hitt")
+      const result = await medicineCollection.find({ category: req.params.category }).toArray();
+      res.send(result);
+    });
+
+
+
     app.get("/medicines/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };

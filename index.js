@@ -243,32 +243,32 @@ async function run() {
     });
 
     app.get("/pharmacyRegistrationApl/:id", async (req, res) => {
-      const id = req.params.id
-      const query = { _id: new ObjectId(id) }
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await pharmacyRegistrationApplication.findOne(query);
       res.send(result);
     });
 
     app.patch("/pharmacyRApprove/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      const email = req.body.email
+      const query = { _id: new ObjectId(id) };
+      const email = req.body.email;
       const newApplication = {
         $set: {
-          applicationType: "Approved"
-        }
-      }
+          applicationType: "Approved",
+        },
+      };
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
       const updateUser = {
         $set: {
-          role: "Pharmacist"
-        }
-      }
+          role: "Pharmacist",
+        },
+      };
       const result2 = await userCollection.updateOne({ email: email }, updateUser);
       res.send({ result, result2 });
     });
 
-    app.delete('/deleteRApplication/:id', async (req, res) => {
+    app.delete("/deleteRApplication/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await pharmacyRegistrationApplication.deleteOne(query);
@@ -297,12 +297,11 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const newRole = {
-        $set: req.body
+        $set: req.body,
       };
       const result = await userCollection.updateOne(query, newRole);
       res.send(result);
     });
-
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

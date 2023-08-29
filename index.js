@@ -58,7 +58,6 @@ async function run() {
 
 
     app.get("/medicines/:category", async (req, res) => {
-      console.log("hitt")
       const result = await medicineCollection.find({ category: req.params.category }).toArray();
       res.send(result);
     });

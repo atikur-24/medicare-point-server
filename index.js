@@ -48,23 +48,37 @@ async function run() {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" } };
       }
-
       // console.log(sbc, sbn) ff
-
       const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
 
     app.get("/medicines/:category", async (req, res) => {
+<<<<<<< HEAD
       console.log("hitt");
       const result = await medicineCollection.find({ category: req.params.category }).toArray();
       res.send(result);
     });
 
     app.get("/medicines/:id", async (req, res) => {
+=======
+      const query = req.params.category;
+      const result = await medicineCollection.find({ "category.value": query }).toArray();
+      res.send(result);
+    });
+
+    app.get("/details/:id", async (req, res) => {
+      // console.log("hitted");
+>>>>>>> 6c51ec4f9eb8995432834f4568c6c4478c1ef392
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/medicines", async (req, res) => {
+      const newMedicine = req.body;
+      const result = await medicineCollection.insertOne(newMedicine);
       res.send(result);
     });
 
@@ -72,10 +86,8 @@ async function run() {
     app.post("/medicines/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
-
       const filter = { _id: new ObjectId(id) };
       const existingItem = await medicineCollection.findOne(filter);
-
       const newReview = [...existingItem.allRatings, review];
       let count = 0.0;
       newReview.forEach((r) => {

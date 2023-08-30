@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const SSLCommerzPayment = require('sslcommerz-lts')
+const SSLCommerzPayment = require("sslcommerz-lts");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -19,8 +19,7 @@ const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlPar
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
-const is_live = false //true for live, false for sandbox
-
+const is_live = false; //true for live, false for sandbox
 
 async function run() {
   try {
@@ -56,13 +55,10 @@ async function run() {
       res.send(result);
     });
 
-
     app.get("/medicines/:category", async (req, res) => {
       const result = await medicineCollection.find({ category: req.params.category }).toArray();
       res.send(result);
     });
-
-
 
     app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
@@ -71,7 +67,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/medicines", async(req, res) => {
+    app.post("/medicines", async (req, res) => {
       const newMedicine = req.body;
       const result = await medicineCollection.insertOne(newMedicine);
       res.send(result);
@@ -87,20 +83,20 @@ async function run() {
 
       const newReview = [...existingItem.allRatings, review];
       let count = 0.0;
-      newReview.forEach(r => {
+      newReview.forEach((r) => {
         count += r.rating;
-      })
+      });
 
       const options = { upsert: true };
       const updatedRating = {
         $set: {
-          rating: parseFloat((count / newReview.length).toFixed(2))
+          rating: parseFloat((count / newReview.length).toFixed(2)),
         },
       };
 
       const updatedRatings = {
         $set: {
-          allRatings: newReview
+          allRatings: newReview,
         },
       };
 
@@ -298,7 +294,7 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updatedData = {
-        $set: req.body
+        $set: req.body,
       };
       const result = await blogCollection.updateOne(query, updatedData);
       res.send(result);
@@ -334,7 +330,7 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updatedData = {
-        $set: req.body
+        $set: req.body,
       };
       const result = await interviewCollection.updateOne(query, updatedData);
       res.send(result);
@@ -360,32 +356,32 @@ async function run() {
     });
 
     app.get("/pharmacyRegistrationApl/:id", async (req, res) => {
-      const id = req.params.id
-      const query = { _id: new ObjectId(id) }
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await pharmacyRegistrationApplication.findOne(query);
       res.send(result);
     });
 
     app.patch("/pharmacyRApprove/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      const email = req.body.email
+      const query = { _id: new ObjectId(id) };
+      const email = req.body.email;
       const newApplication = {
         $set: {
-          applicationType: "Approved"
-        }
-      }
+          applicationType: "Approved",
+        },
+      };
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
       const updateUser = {
         $set: {
-          role: "Pharmacist"
-        }
-      }
+          role: "Pharmacist",
+        },
+      };
       const result2 = await userCollection.updateOne({ email: email }, updateUser);
       res.send({ result, result2 });
     });
 
-    app.delete('/deleteRApplication/:id', async (req, res) => {
+    app.delete("/deleteRApplication/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await pharmacyRegistrationApplication.deleteOne(query);
@@ -414,12 +410,11 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const newRole = {
-        $set: req.body
+        $set: req.body,
       };
       const result = await userCollection.updateOne(query, newRole);
       res.send(result);
     });
-
 
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {
@@ -427,103 +422,107 @@ async function run() {
       const cart = paymentData.cart;
       const transId = new ObjectId().toString();
 
-      const {
-        name,
-        email,
-        division,
-        district,
-        location,
-        number,
-        totalPayment
-      } = paymentData.paymentDetails;
+      const { name, email, division, district, location, number, totalPayment } = paymentData.paymentDetails;
 
       const data = {
         total_amount: totalPayment,
-        currency: 'BDT',
+        currency: "BDT",
         tran_id: transId, // use unique tran_id for each api call
         success_url: `http://localhost:5000/payment/success/${transId}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
-        cancel_url: 'http://localhost:3030/cancel',
-        ipn_url: 'http://localhost:3030/ipn',
-        shipping_method: 'Courier',
-        product_name: 'Computer.',
-        product_category: 'Electronic',
-        product_profile: 'general',
+        cancel_url: "http://localhost:3030/cancel",
+        ipn_url: "http://localhost:3030/ipn",
+        shipping_method: "Courier",
+        product_name: "Computer.",
+        product_category: "Electronic",
+        product_profile: "general",
         cus_name: name,
         cus_email: email,
         cus_add1: location,
-        cus_add2: 'Dhaka',
-        cus_city: 'Dhaka',
-        cus_state: 'Dhaka',
-        cus_postcode: '1000',
-        cus_country: 'Bangladesh',
+        cus_add2: "Dhaka",
+        cus_city: "Dhaka",
+        cus_state: "Dhaka",
+        cus_postcode: "1000",
+        cus_country: "Bangladesh",
         cus_phone: number,
-        cus_fax: '01711111111',
-        ship_name: 'Customer Name',
-        ship_add1: 'Dhaka',
-        ship_add2: 'Dhaka',
-        ship_city: 'Dhaka',
-        ship_state: 'Dhaka',
+        cus_fax: "01711111111",
+        ship_name: "Customer Name",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
         ship_postcode: 1000,
-        ship_country: 'Bangladesh',
+        ship_country: "Bangladesh",
       };
 
-      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
-      sslcz.init(data).then(apiResponse => {
-
-        const a = cart.map((cp => {
+      sslcz.init(data).then((apiResponse) => {
+        const a = cart.map((cp) => {
           const { _id, medicine_Id, medicine_name, price, quantity, discount, email, category, image } = cp;
           const singleProduct = {
-            transId, cartId: _id, medicine_Id, status: "pending", medicine_name, price, quantity, discount, email, category, image, name, division, district, location, number,
+            transId,
+            cartId: _id,
+            medicine_Id,
+            status: "pending",
+            medicine_name,
+            price,
+            quantity,
+            discount,
+            email,
+            category,
+            image,
+            name,
+            division,
+            district,
+            location,
+            number,
           };
           const createOrder = orderedMedicinesCollection.insertOne(singleProduct);
-        }))
+        });
         // Redirect the user to payment gateway
-        let GatewayPageURL = apiResponse.GatewayPageURL
-        res.send({ url: GatewayPageURL })
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL });
         // console.log('Redirecting to: ', GatewayPageURL)
       });
 
       app.post("/payment/success/:id", async (req, res) => {
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
-        orderedItems.forEach(async item => {
+        orderedItems.forEach(async (item) => {
           const newStatus = {
             $set: {
-              status: "success"
-            }
+              status: "success",
+            },
           };
 
           const query = { _id: new ObjectId(item.medicine_Id) };
           const result1 = await medicineCollection.findOne(query);
           const updateQuantity = {
             $set: {
-              sellQuantity: result1.sellQuantity + item.quantity
-            }
+              sellQuantity: result1.sellQuantity + item.quantity,
+            },
           };
           const result2 = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus);
           const result3 = await medicineCollection.updateOne({ _id: new ObjectId(item.medicine_Id) }, updateQuantity);
           const result4 = await mediCartCollection.deleteOne({ _id: new ObjectId(item.cartId) });
 
           // console.log("a", result2, result3, result4)
-        })
+        });
 
-        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.id}`)
-      })
+        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.id}`);
+      });
 
       app.post("/payment/fail/:id", async (req, res) => {
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
-        orderedItems.forEach(async item => {
+        orderedItems.forEach(async (item) => {
           const result = await orderedMedicinesCollection.deleteOne({ _id: new ObjectId(item._id.toString()) });
-        })
+        });
 
-        res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`)
-      })
-
+        res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
+      });
     });
-
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

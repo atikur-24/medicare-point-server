@@ -56,8 +56,9 @@ async function run() {
 
 
     app.get("/medicines/:category", async (req, res) => {
-      // console.log("hitt")
-      const result = await medicineCollection.find({ category: req.params.category }).toArray();
+      const query = req.params.category
+      const result = await medicineCollection.find({ "category.value": query }).toArray();
+      // console.log(result)
       res.send(result);
     });
 
@@ -68,6 +69,12 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/medicines", async (req, res) => {
+      const newMedicine = req.body;
+      const result = await medicineCollection.insertOne(newMedicine);
       res.send(result);
     });
 

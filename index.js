@@ -64,10 +64,16 @@ async function run() {
 
 
 
-    app.get("/medicines/:id", async (req, res) => {
+    app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/medicines", async(req, res) => {
+      const newMedicine = req.body;
+      const result = await medicineCollection.insertOne(newMedicine);
       res.send(result);
     });
 

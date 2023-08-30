@@ -75,10 +75,8 @@ async function run() {
     app.post("/medicines/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
-
       const filter = { _id: new ObjectId(id) };
       const existingItem = await medicineCollection.findOne(filter);
-
       const newReview = [...existingItem.allRatings, review];
       let count = 0.0;
       newReview.forEach(r => {

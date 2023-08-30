@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-// ssl config
+// ssl config 
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
 const is_live = false //true for live, false for sandbox
@@ -50,20 +50,17 @@ async function run() {
         query = { medicine_name: { $regex: sbn, $options: "i" } };
       }
 
-      // console.log(sbc, sbn) ff
+      // console.log(sbc, sbn)
 
       const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
-
 
     app.get("/medicines/:category", async (req, res) => {
       console.log("hitt")
       const result = await medicineCollection.find({ category: req.params.category }).toArray();
       res.send(result);
     });
-
-
 
     app.get("/medicines/:id", async (req, res) => {
       const id = req.params.id;
@@ -72,7 +69,7 @@ async function run() {
       res.send(result);
     });
 
-    // Adding reviews
+    // Adding reviews 
     app.post("/medicines/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
@@ -277,7 +274,7 @@ async function run() {
 
     app.post("/blogs", async (req, res) => {
       const newBlog = req.body;
-      // console.log(newBlog)
+      // console.log(newBlog) a
       const result = await blogCollection.insertOne(newBlog);
       res.send(result);
     });
@@ -306,7 +303,7 @@ async function run() {
       res.send(result);
     });
 
-    // interviews
+    // interviews 
     app.get("/interviews", async (req, res) => {
       const result = await interviewCollection.find().toArray();
       res.send(result);

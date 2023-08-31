@@ -44,13 +44,29 @@ async function run() {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
       let query = {};
+      let sortObject = {}
 
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" } };
       }
-      // console.log(sbc, sbn) ff
-      const result = await medicineCollection.find(query).toArray();
+
+      if (req.query.sort === "phtl") {
+        sortObject = { price: 1 }
+      }
+      else if (req.query.sort === "plth") {
+        sortObject = { price: -1 }
+      }
+      else if (req.query.sort === "byRating") {
+        sortObject = { rating: -1 }
+      }
+      else if (req.query.sort === "fNew") {
+        sortObject = { date: -1 }
+      }
+      else if (req.query.sort === "fOld") {
+        sortObject = { date: 1 }
+      }
+      const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
     });
 
@@ -60,6 +76,7 @@ async function run() {
       const result = await medicineCollection.find({ "category.value": query }).toArray();
       res.send(result);
     });
+
 
 
 

@@ -35,7 +35,6 @@ async function run() {
     const labCartCollection = database.collection("labsCart");
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
-    const interviewCollection = database.collection("interviews");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
 
     // =========== Medicines Related apis ===========
@@ -43,7 +42,7 @@ async function run() {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
       let query = {};
-      let sortObject = {}
+      let sortObject = {};
 
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
@@ -51,19 +50,15 @@ async function run() {
       }
 
       if (req.query.sort === "phtl") {
-        sortObject = { price: 1 }
-      }
-      else if (req.query.sort === "plth") {
-        sortObject = { price: -1 }
-      }
-      else if (req.query.sort === "byRating") {
-        sortObject = { rating: -1 }
-      }
-      else if (req.query.sort === "fNew") {
-        sortObject = { date: -1 }
-      }
-      else if (req.query.sort === "fOld") {
-        sortObject = { date: 1 }
+        sortObject = { price: 1 };
+      } else if (req.query.sort === "plth") {
+        sortObject = { price: -1 };
+      } else if (req.query.sort === "byRating") {
+        sortObject = { rating: -1 };
+      } else if (req.query.sort === "fNew") {
+        sortObject = { date: -1 };
+      } else if (req.query.sort === "fOld") {
+        sortObject = { date: 1 };
       }
       const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
@@ -291,7 +286,6 @@ async function run() {
 
     app.post("/blogs", async (req, res) => {
       const newBlog = req.body;
-      // console.log(newBlog)
       const result = await blogCollection.insertOne(newBlog);
       res.send(result);
     });
@@ -317,42 +311,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.deleteOne(query);
-      res.send(result);
-    });
-
-    // interviews
-    app.get("/interviews", async (req, res) => {
-      const result = await interviewCollection.find().toArray();
-      res.send(result);
-    });
-    app.get("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await interviewCollection.findOne(query);
-      res.send(result);
-    });
-
-    app.post("/interviews", async (req, res) => {
-      const newInterview = req.body;
-      // console.log(newBlog)
-      const result = await interviewCollection.insertOne(newInterview);
-      res.send(result);
-    });
-
-    app.put("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const updatedData = {
-        $set: req.body,
-      };
-      const result = await interviewCollection.updateOne(query, updatedData);
-      res.send(result);
-    });
-
-    app.delete("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await interviewCollection.deleteOne(query);
       res.send(result);
     });
 

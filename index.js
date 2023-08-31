@@ -77,6 +77,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/phamacistMedicines", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { pharmacist_email: email };
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/medicines", async (req, res) => {
       const newMedicine = req.body;
       const result = await medicineCollection.insertOne(newMedicine);

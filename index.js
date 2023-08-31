@@ -50,26 +50,33 @@ async function run() {
         query = { medicine_name: { $regex: sbn, $options: "i" } };
       }
 
-      // console.log(sbc, sbn)
+      // console.log(sbc, sbn)  
 
       const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
 
     app.get("/medicines/:category", async (req, res) => {
-      console.log("hitt")
       const result = await medicineCollection.find({ category: req.params.category }).toArray();
       res.send(result);
     });
 
-    app.get("/medicines/:id", async (req, res) => {
+
+
+    app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
       res.send(result);
     });
 
-    // Adding reviews 
+    app.post("/medicines", async (req, res) => {
+      const newMedicine = req.body;
+      const result = await medicineCollection.insertOne(newMedicine);
+      res.send(result);
+    });
+
+    // Adding reviews
     app.post("/medicines/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;

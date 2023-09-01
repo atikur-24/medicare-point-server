@@ -45,6 +45,11 @@ async function run() {
       let query = {};
       let sortObject = {}
 
+      const page = parseInt(req.query.page) || 1;
+      const size = parseInt(req.params.size) || 2;
+      const skip = (page - 1) * size;
+
+
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" } };
@@ -65,6 +70,7 @@ async function run() {
       else if (req.query.sort === "fOld") {
         sortObject = { date: 1 }
       }
+      const total = await medicineCollection.countDocuments()
       const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
     });

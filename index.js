@@ -123,6 +123,13 @@ async function run() {
       res.send(result2);
     });
 
+    app.delete("/medicines/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await medicineCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // =========== Medicines Cart Related apis ===========
     app.get("/medicineCarts", async (req, res) => {
       const email = req.query.email;

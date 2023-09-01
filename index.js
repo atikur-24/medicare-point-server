@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-// ssl config
+// ssl config 
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
 const is_live = false; //true for live, false for sandbox
@@ -35,7 +35,6 @@ async function run() {
     const labCartCollection = database.collection("labsCart");
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
-    const interviewCollection = database.collection("interviews");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
 
     // =========== Medicines Related apis ===========
@@ -43,7 +42,7 @@ async function run() {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
       let query = {};
-      let sortObject = {}
+      let sortObject = {};
 
       const page = parseInt(req.query.page) || 1;
       const size = parseInt(req.params.size) || 2;
@@ -56,19 +55,15 @@ async function run() {
       }
 
       if (req.query.sort === "phtl") {
-        sortObject = { price: 1 }
-      }
-      else if (req.query.sort === "plth") {
-        sortObject = { price: -1 }
-      }
-      else if (req.query.sort === "byRating") {
-        sortObject = { rating: -1 }
-      }
-      else if (req.query.sort === "fNew") {
-        sortObject = { date: -1 }
-      }
-      else if (req.query.sort === "fOld") {
-        sortObject = { date: 1 }
+        sortObject = { price: 1 };
+      } else if (req.query.sort === "plth") {
+        sortObject = { price: -1 };
+      } else if (req.query.sort === "byRating") {
+        sortObject = { rating: -1 };
+      } else if (req.query.sort === "fNew") {
+        sortObject = { date: -1 };
+      } else if (req.query.sort === "fOld") {
+        sortObject = { date: 1 };
       }
       const total = await medicineCollection.countDocuments()
       const result = await medicineCollection.find(query).sort(sortObject).toArray();
@@ -85,6 +80,16 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/phamacistMedicines", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { pharmacist_email: email };
+      const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -122,6 +127,13 @@ async function run() {
       const result1 = await medicineCollection.updateOne(filter, updatedRating, options);
       const result2 = await medicineCollection.updateOne(filter, updatedRatings, options);
       res.send(result2);
+    });
+
+    app.delete("/medicines/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await medicineCollection.deleteOne(query);
+      res.send(result);
     });
 
     // =========== Medicines Cart Related apis ===========
@@ -297,7 +309,6 @@ async function run() {
 
     app.post("/blogs", async (req, res) => {
       const newBlog = req.body;
-      // console.log(newBlog)
       const result = await blogCollection.insertOne(newBlog);
       res.send(result);
     });
@@ -323,42 +334,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.deleteOne(query);
-      res.send(result);
-    });
-
-    // interviews
-    app.get("/interviews", async (req, res) => {
-      const result = await interviewCollection.find().toArray();
-      res.send(result);
-    });
-    app.get("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await interviewCollection.findOne(query);
-      res.send(result);
-    });
-
-    app.post("/interviews", async (req, res) => {
-      const newInterview = req.body;
-      // console.log(newBlog)
-      const result = await interviewCollection.insertOne(newInterview);
-      res.send(result);
-    });
-
-    app.put("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const updatedData = {
-        $set: req.body,
-      };
-      const result = await interviewCollection.updateOne(query, updatedData);
-      res.send(result);
-    });
-
-    app.delete("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await interviewCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -449,7 +424,7 @@ async function run() {
         tran_id: transId, // use unique tran_id for each api call
         success_url: `http://localhost:5000/payment/success/${transId}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
-        cancel_url: "http://localhost:3030/cancel",
+        cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
         product_name: "Computer.",

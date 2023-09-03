@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-// ssl config
+// ssl config 
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
 const is_live = false; //true for live, false for sandbox
@@ -44,6 +44,11 @@ async function run() {
       let query = {};
       let sortObject = {};
 
+      const page = parseInt(req.query.page) || 1;
+      const size = parseInt(req.params.size) || 2;
+      const skip = (page - 1) * size;
+
+
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" } };
@@ -60,6 +65,7 @@ async function run() {
       } else if (req.query.sort === "fOld") {
         sortObject = { date: 1 };
       }
+      const total = await medicineCollection.countDocuments()
       const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
     });
@@ -121,6 +127,13 @@ async function run() {
       const result1 = await medicineCollection.updateOne(filter, updatedRating, options);
       const result2 = await medicineCollection.updateOne(filter, updatedRatings, options);
       res.send(result2);
+    });
+
+    app.delete("/medicines/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await medicineCollection.deleteOne(query);
+      res.send(result);
     });
 
     // =========== Medicines Cart Related apis ===========
@@ -411,7 +424,7 @@ async function run() {
         tran_id: transId, // use unique tran_id for each api call
         success_url: `http://localhost:5000/payment/success/${transId}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
-        cancel_url: "http://localhost:3030/cancel",
+        cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
         product_name: "Computer.",

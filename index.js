@@ -567,8 +567,25 @@ async function run() {
 
     // upload images 
     app.get("/images", async (req, res) => {
-      const email = req.query.email;
-      const result = await imagesCollection.find({ email: email }).toArray();
+      const email = req.query?.email;
+      const name = req.query?.name;
+      let query = {};
+
+      if (email != 'undefined') {
+        query = { ...query, email: email };
+      }
+      if (name != 'undefined') {
+        query = { ...query, name: { $regex: name, $options: "i" } };
+      }
+      // console.log(query)
+
+      const result = await imagesCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.post("/images", async (req, res) => {
+      const data = req.body;
+      const result = await imagesCollection.insertOne(data);
       res.send(result);
     })
 

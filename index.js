@@ -38,15 +38,26 @@ async function run() {
     const orderedMedicinesCollection = database.collection("orderedMedicines");
 
     // =========== Medicines Related apis ===========
+    app.get("/all-medicines", async(req, res) => {
+      const result = await medicineCollection.find().toArray();
+      res.send(result);
+    })
+    
+    // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
-      let query = {};
+      let query = { status: 'approved' };
       let sortObject = {};
+
+      const page = parseInt(req.query.page) || 1;
+      const size = parseInt(req.params.size) || 2;
+      const skip = (page - 1) * size;
+
 
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" } };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved'  };
       }
 
       if (req.query.sort === "phtl") {
@@ -60,6 +71,7 @@ async function run() {
       } else if (req.query.sort === "fOld") {
         sortObject = { date: 1 };
       }
+      const total = await medicineCollection.countDocuments()
       const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
     });
@@ -121,6 +133,13 @@ async function run() {
       const result1 = await medicineCollection.updateOne(filter, updatedRating, options);
       const result2 = await medicineCollection.updateOne(filter, updatedRatings, options);
       res.send(result2);
+    });
+
+    app.delete("/medicines/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await medicineCollection.deleteOne(query);
+      res.send(result);
     });
 
     // =========== Medicines Cart Related apis ===========

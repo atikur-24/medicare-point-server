@@ -463,7 +463,7 @@ async function run() {
         });
         // Redirect the user to payment gateway
         let GatewayPageURL = apiResponse.GatewayPageURL;
-        res.send({ url: GatewayPageURL });
+        res.send({ url: GatewayPageURL, transId });
         // console.log('Redirecting to: ', GatewayPageURL)
       });
 

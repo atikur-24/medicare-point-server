@@ -589,6 +589,12 @@ async function run() {
       res.send(result);
     })
 
+    app.delete("/images/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

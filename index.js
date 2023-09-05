@@ -30,7 +30,7 @@ async function run() {
     const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
     const pharmacyRegistrationApplication = database.collection("P.R. Applications");
-    const labCategoryCollection = database.collection("labCategory");
+    const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
     const labCartCollection = database.collection("labsCart");
     const healthTipsCollection = database.collection("healthTips");

@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-// ssl config
+// ssl config 
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
 const is_live = false; //true for live, false for sandbox
@@ -30,26 +30,50 @@ async function run() {
     const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
     const pharmacyRegistrationApplication = database.collection("P.R. Applications");
-    const labCategoryCollection = database.collection("labCategory");
+    const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
     const labCartCollection = database.collection("labsCart");
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
-    const interviewCollection = database.collection("interviews");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
+    const imagesCollection = database.collection("images");
 
     // =========== Medicines Related apis ===========
+    app.get("/all-medicines", async (req, res) => {
+      const result = await medicineCollection.find().toArray();
+      res.send(result);
+    })
+
+    // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
-      let query = {};
+      let query = { status: 'approved' };
+      let sortObject = {};
+
+      const page = parseInt(req.query.page) || 1;
+      const size = parseInt(req.params.size) || 2;
+      const skip = (page - 1) * size;
+
 
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" } };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
       }
-      // console.log(sbc, sbn) ff
-      const result = await medicineCollection.find(query).toArray();
+
+      if (req.query.sort === "phtl") {
+        sortObject = { price: 1 };
+      } else if (req.query.sort === "plth") {
+        sortObject = { price: -1 };
+      } else if (req.query.sort === "byRating") {
+        sortObject = { rating: -1 };
+      } else if (req.query.sort === "fNew") {
+        sortObject = { date: -1 };
+      } else if (req.query.sort === "fOld") {
+        sortObject = { date: 1 };
+      }
+      const total = await medicineCollection.countDocuments()
+      const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
     });
 
@@ -59,11 +83,20 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/details/:id", async (req, res) => {
-      // console.log("hitted");
+    app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/phamacistMedicines", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { pharmacist_email: email };
+      const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -101,6 +134,13 @@ async function run() {
       const result1 = await medicineCollection.updateOne(filter, updatedRating, options);
       const result2 = await medicineCollection.updateOne(filter, updatedRatings, options);
       res.send(result2);
+    });
+
+    app.delete("/medicines/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await medicineCollection.deleteOne(query);
+      res.send(result);
     });
 
     // =========== Medicines Cart Related apis ===========
@@ -276,7 +316,6 @@ async function run() {
 
     app.post("/blogs", async (req, res) => {
       const newBlog = req.body;
-      // console.log(newBlog)
       const result = await blogCollection.insertOne(newBlog);
       res.send(result);
     });
@@ -303,42 +342,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.deleteOne(query);
-      res.send(result);
-    });
-
-    // interviews
-    app.get("/interviews", async (req, res) => {
-      const result = await interviewCollection.find().toArray();
-      res.send(result);
-    });
-    app.get("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await interviewCollection.findOne(query);
-      res.send(result);
-    });
-
-    app.post("/interviews", async (req, res) => {
-      const newInterview = req.body;
-      // console.log(newBlog)
-      const result = await interviewCollection.insertOne(newInterview);
-      res.send(result);
-    });
-
-    app.put("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const updatedData = {
-        $set: req.body,
-      };
-      const result = await interviewCollection.updateOne(query, updatedData);
-      res.send(result);
-    });
-
-    app.delete("/interviews/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await interviewCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -468,7 +471,7 @@ async function run() {
         tran_id: transId, // use unique tran_id for each api call
         success_url: `http://localhost:5000/payment/success/${transId}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
-        cancel_url: "http://localhost:3030/cancel",
+        cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
         product_name: "Computer.",
@@ -520,7 +523,7 @@ async function run() {
         });
         // Redirect the user to payment gateway
         let GatewayPageURL = apiResponse.GatewayPageURL;
-        res.send({ url: GatewayPageURL });
+        res.send({ url: GatewayPageURL, transId });
         // console.log('Redirecting to: ', GatewayPageURL)
       });
 
@@ -561,6 +564,13 @@ async function run() {
         res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
       });
     });
+
+    // upload images 
+    app.get("/images", async (req, res) => {
+      const email = req.query.email;
+      const result = await imagesCollection.find({ email: email }).toArray();
+      res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

@@ -38,10 +38,16 @@ async function run() {
     const orderedMedicinesCollection = database.collection("orderedMedicines");
 
     // =========== Medicines Related apis ===========
+    app.get("/all-medicines", async(req, res) => {
+      const result = await medicineCollection.find().toArray();
+      res.send(result);
+    })
+    
+    // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
-      let query = {};
+      let query = { status: 'approved' };
       let sortObject = {};
 
       const page = parseInt(req.query.page) || 1;
@@ -51,7 +57,7 @@ async function run() {
 
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" } };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved'  };
       }
 
       if (req.query.sort === "phtl") {

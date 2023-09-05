@@ -36,13 +36,14 @@ async function run() {
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
+    const imagesCollection = database.collection("images");
 
     // =========== Medicines Related apis ===========
-    app.get("/all-medicines", async(req, res) => {
+    app.get("/all-medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     })
-    
+
     // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
@@ -57,7 +58,7 @@ async function run() {
 
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved'  };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
       }
 
       if (req.query.sort === "phtl") {
@@ -523,6 +524,13 @@ async function run() {
         res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
       });
     });
+
+    // upload images 
+    app.get("/images", async (req, res) => {
+      const email = req.query.email;
+      const result = await imagesCollection.find({ email: email }).toArray();
+      res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

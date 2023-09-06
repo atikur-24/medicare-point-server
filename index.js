@@ -668,10 +668,10 @@ async function run() {
       });
 
       app.post("/payment/fail/:id", async (req, res) => {
-        orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
+        orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
         orderedItems.forEach(async (item) => {
-          const result = await orderedMedicinesCollection.deleteOne({ _id: new ObjectId(item._id.toString()) });
+          const result = await bookedLabTestCollection.deleteOne({ _id: new ObjectId(item._id.toString()) });
         });
 
         res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);

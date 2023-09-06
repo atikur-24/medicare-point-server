@@ -330,6 +330,7 @@ async function run() {
 
     app.put("/blogs/:id", async (req, res) => {
       const id = req.params.id;
+      console.log("test");
       const query = { _id: new ObjectId(id) };
       const updatedData = {
         $set: req.body,
@@ -400,6 +401,45 @@ async function run() {
       }
       const result = await userCollection.insertOne(user);
       res.send(result);
+    });
+    app.put("/users/:email", async (req, res) => {
+      const userEmail = req.params.email; // Get the user's email from the URL parameter
+      const updatedUserData = req.body; // User data to update
+
+      // Create a query to find the user by their email
+      const query = { email: userEmail };
+
+      // Check if the user with the specified email exists
+      const existingUser = await userCollection.findOne(query);
+
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Update the user's profile data
+      const updateResult = await userCollection.updateOne(query, { $set: updatedUserData });
+
+      if (updateResult.modifiedCount === 0) {
+        return res.status(500).json({ message: "Failed to update user profile" });
+      }
+
+      res.status(200).json({ message: "User profile updated successfully" });
+    });
+    app.get("/users/:email", async (req, res) => {
+      const userEmail = req.params.email; // Get the user's email from the URL parameter
+
+      // Create a query to find the user by their email
+      const query = { email: userEmail };
+
+      // Find the user based on the email
+      const user = await userCollection.findOne(query);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return the user's profile data as a JSON response
+      res.status(200).json(user);
     });
 
     app.get("/users", async (req, res) => {
@@ -528,8 +568,25 @@ async function run() {
 
     // upload images
     app.get("/images", async (req, res) => {
-      const email = req.query.email;
-      const result = await imagesCollection.find({ email: email }).toArray();
+      const email = req.query?.email;
+      const name = req.query?.name;
+      let query = {};
+
+      if (email != 'undefined') {
+        query = { ...query, email: email };
+      }
+      if (name != 'undefined') {
+        query = { ...query, name: { $regex: name, $options: "i" } };
+      }
+      // console.log(query)
+
+      const result = await imagesCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.post("/images", async (req, res) => {
+      const data = req.body;
+      const result = await imagesCollection.insertOne(data);
       res.send(result);
     })
 

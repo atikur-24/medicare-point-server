@@ -51,15 +51,10 @@ async function run() {
       let query = { status: 'approved' };
       let sortObject = {};
       let category
-
-      const page = parseInt(req.query.page) || 1;
-      const size = parseInt(req.params.size) || 2;
-      const skip = (page - 1) * size;
-
       if (sbc) {
         category = req?.query?.category
       }
-
+      
       if (sbn) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
@@ -76,7 +71,6 @@ async function run() {
       } else if (req.query.sort === "fOld") {
         sortObject = { date: 1 };
       }
-      const total = await medicineCollection.countDocuments()
       const result = await medicineCollection.find(query, category).sort(sortObject).toArray();
       res.send(result);
     });

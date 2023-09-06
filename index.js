@@ -50,13 +50,17 @@ async function run() {
       const sbc = req.query?.category;
       let query = { status: 'approved' };
       let sortObject = {};
+      let category
 
       const page = parseInt(req.query.page) || 1;
       const size = parseInt(req.params.size) || 2;
       const skip = (page - 1) * size;
 
+      if (sbc) {
+        category = req?.query?.category
+      }
 
-      if (sbn || sbc) {
+      if (sbn) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
       }
@@ -73,12 +77,13 @@ async function run() {
         sortObject = { date: 1 };
       }
       const total = await medicineCollection.countDocuments()
-      const result = await medicineCollection.find(query).sort(sortObject).toArray();
+      const result = await medicineCollection.find(query, category).sort(sortObject).toArray();
       res.send(result);
     });
 
-    app.get("/medicines/:category", async (req, res) => {
-      const category = req.params.category;
+    app.get("/medicinesc", async (req, res) => {
+      const category = req.query.category
+      // console.log(category);
       const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
@@ -369,15 +374,16 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const email = req.body.email;
+      // const body = req.body
       const newApplication = {
         $set: {
-          applicationType: "Approved",
+          applicationType: req?.body?.applicationType,
         },
       };
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
       const updateUser = {
         $set: {
-          role: "Pharmacist",
+          role: req?.body?.role
         },
       };
       const result2 = await userCollection.updateOne({ email: email }, updateUser);

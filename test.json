@@ -1,6 +1,9 @@
 [
     {
         "email": "mamun@gmail.com",
+<<<<<<< HEAD
+        "photoURL": "https://i.ibb.co/qjTNqxY/product-12-2.jpg"
+=======
         "photoURL": "https://i.ibb.co/qjTNqxY/product-12-2.jpg",
         "name": "medicine 1"
     },
@@ -39,5 +42,6 @@
         "deletePhotoURL": "https://ibb.co/5kFfDZM/061e03d1c7469c76a095c7529c4221dc",
         "email": "mamun@gmail.com",
         "name": "gellary"
+>>>>>>> b25690fd219a36107ecfe2555b704be23ce029b4
     }
 ]

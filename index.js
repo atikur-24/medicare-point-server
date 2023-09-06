@@ -136,6 +136,20 @@ async function run() {
       res.send(result2);
     });
 
+    app.put("/update-medicine/:id", async(req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      // Remove the _id field from the updatedData
+      delete updatedData._id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedMedicine = {
+        $set: { ...updatedData },
+      };
+      const result = await medicineCollection.updateOne(filter, updatedMedicine, options);
+      res.send(result);
+    });
+
     app.delete("/medicines/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -329,7 +343,6 @@ async function run() {
 
     app.put("/blogs/:id", async (req, res) => {
       const id = req.params.id;
-      console.log("test");
       const query = { _id: new ObjectId(id) };
       const updatedData = {
         $set: req.body,

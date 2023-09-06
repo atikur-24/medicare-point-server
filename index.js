@@ -532,6 +532,16 @@ async function run() {
       app.post("/payment/success/:id", async (req, res) => {
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
+        const userDetails = await userCollection.findOne({ email: email });
+        const newRewordPoint = userDetails?.rewardPoints + Math.ceil(totalPayment * 0.05);
+        const updatePoint = {
+          $set: {
+            rewardPoints: newRewordPoint,
+          },
+        }
+
+        const doneReword = await userCollection.updateOne({ email: email }, updatePoint);
+
         orderedItems.forEach(async (item) => {
           const newStatus = {
             $set: {
@@ -641,6 +651,16 @@ async function run() {
 
       app.post("/payment/success/:id", async (req, res) => {
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
+
+        const userDetails = await userCollection.findOne({ email: email });
+        const newRewordPoint = userDetails?.rewardPoints + Math.ceil(totalPayment * 0.10);
+        const updatePoint = {
+          $set: {
+            rewardPoints: newRewordPoint,
+          },
+        }
+
+        const doneReword = await userCollection.updateOne({ email: email }, updatePoint);
 
         orderedItems.forEach(async (item) => {
           const newStatus = {

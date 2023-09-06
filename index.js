@@ -54,7 +54,7 @@ async function run() {
       if (sbc) {
         category = req?.query?.category
       }
-      
+
       if (sbn) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
         query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
@@ -71,13 +71,13 @@ async function run() {
       } else if (req.query.sort === "fOld") {
         sortObject = { date: 1 };
       }
+
       const result = await medicineCollection.find(query, category).sort(sortObject).toArray();
       res.send(result);
     });
 
     app.get("/medicinesc", async (req, res) => {
       const category = req.query.category
-      // console.log(category);
       const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });

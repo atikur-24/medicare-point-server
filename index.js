@@ -43,23 +43,22 @@ async function run() {
     app.get("/all-medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
-      let query = { status: 'approved' };
+      let query = { status: "approved" };
       let sortObject = {};
 
       const page = parseInt(req.query.page) || 1;
       const size = parseInt(req.params.size) || 2;
       const skip = (page - 1) * size;
 
-
       if (sbn || sbc) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
 
       if (req.query.sort === "phtl") {
@@ -73,7 +72,7 @@ async function run() {
       } else if (req.query.sort === "fOld") {
         sortObject = { date: 1 };
       }
-      const total = await medicineCollection.countDocuments()
+      const total = await medicineCollection.countDocuments();
       const result = await medicineCollection.find(query).sort(sortObject).toArray();
       res.send(result);
     });
@@ -83,7 +82,6 @@ async function run() {
       const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
-
 
     app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
@@ -545,6 +543,16 @@ async function run() {
       app.post("/payment/success/:id", async (req, res) => {
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
+        const userDetails = await userCollection.findOne({ email: email });
+        const newRewordPoint = userDetails?.rewardPoints + Math.ceil(totalPayment * 0.05);
+        const updatePoint = {
+          $set: {
+            rewardPoints: newRewordPoint,
+          },
+        }
+
+        const doneReword = await userCollection.updateOne({ email: email }, updatePoint);
+
         orderedItems.forEach(async (item) => {
           const newStatus = {
             $set: {
@@ -580,7 +588,6 @@ async function run() {
       });
     });
 
-
     app.post("/labPayment", async (req, res) => {
       const paymentData = req.body;
       const cart = paymentData.cart;
@@ -589,10 +596,9 @@ async function run() {
       const { name, mobile, email, address, dateTime, age, note, area } = paymentData.personalInfo;
 
       let totalPayment = 0.0 + 50.0; // or report
-      cart.forEach(singleItem => {
+      cart.forEach((singleItem) => {
         totalPayment += singleItem.remaining;
-      })
-
+      });
 
       const data = {
         total_amount: totalPayment,
@@ -624,36 +630,44 @@ async function run() {
         ship_city: "Dhaka",
         ship_state: "Dhaka",
         ship_postcode: 1000,
-
       };
 
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
-      sslcz.init(data)
-        .then((apiResponse) => {
-          const a = cart.map(async (cp) => {
-            const cartId = cp._id;
-            delete cp._id;
+      sslcz.init(data).then((apiResponse) => {
+        const a = cart.map(async (cp) => {
+          const cartId = cp._id;
+          delete cp._id;
 
-            const singleProduct = {
-              transId,
-              cartId: cartId,
-              status: "pending",
-              ...cp,
-              ...paymentData.personalInfo
-            };
+          const singleProduct = {
+            transId,
+            cartId: cartId,
+            status: "pending",
+            ...cp,
+            ...paymentData.personalInfo,
+          };
 
-            const createOrder = await bookedLabTestCollection.insertOne(singleProduct);
-          });
-
-          // Redirect the user to payment gateway
-          let GatewayPageURL = apiResponse.GatewayPageURL;
-          res.send({ url: GatewayPageURL, transId, totalPayment });
-          // console.log('Redirecting to: ', GatewayPageURL)
+          const createOrder = await bookedLabTestCollection.insertOne(singleProduct);
         });
+
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL, transId, totalPayment });
+        // console.log('Redirecting to: ', GatewayPageURL)
+      });
 
       app.post("/payment/success/:id", async (req, res) => {
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
+
+        const userDetails = await userCollection.findOne({ email: email });
+        const newRewordPoint = userDetails?.rewardPoints + Math.ceil(totalPayment * 0.10);
+        const updatePoint = {
+          $set: {
+            rewardPoints: newRewordPoint,
+          },
+        }
+
+        const doneReword = await userCollection.updateOne({ email: email }, updatePoint);
 
         orderedItems.forEach(async (item) => {
           const newStatus = {
@@ -691,36 +705,35 @@ async function run() {
       });
     });
 
-
     // upload images
     app.get("/images", async (req, res) => {
       const email = req.query?.email;
       const name = req.query?.name;
       let query = {};
 
-      if (email != 'undefined') {
+      if (email != "undefined") {
         query = { ...query, email: email };
       }
-      if (name != 'undefined') {
+      if (name != "undefined") {
         query = { ...query, name: { $regex: name, $options: "i" } };
       }
       // console.log(query)
 
       const result = await imagesCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
     app.post("/images", async (req, res) => {
       const data = req.body;
       const result = await imagesCollection.insertOne(data);
       res.send(result);
-    })
+    });
 
     app.delete("/images/:id", async (req, res) => {
       const id = req.params.id;
       const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
-    })
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

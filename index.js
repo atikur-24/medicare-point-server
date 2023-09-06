@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-// ssl config 
+// ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
 const is_live = false; //true for live, false for sandbox
@@ -78,10 +78,11 @@ async function run() {
     });
 
     app.get("/medicines/:category", async (req, res) => {
-      const query = req.params.category;
-      const result = await medicineCollection.find({ "category.value": query }).toArray();
+      const category = req.params.category;
+      const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
+
 
     app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
@@ -525,7 +526,7 @@ async function run() {
       });
     });
 
-    // upload images 
+    // upload images
     app.get("/images", async (req, res) => {
       const email = req.query.email;
       const result = await imagesCollection.find({ email: email }).toArray();

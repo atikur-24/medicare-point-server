@@ -196,7 +196,7 @@ async function run() {
     });
 
     app.get("/labAllItems", async (req, res) => {
-      const result = await labItemsCollection.find().toArray();
+      const result = await labItemsCollection.find().sort({ report: 1 }).toArray();
       res.send(result);
     });
 
@@ -536,7 +536,7 @@ async function run() {
           $set: {
             rewardPoints: newRewordPoint,
           },
-        }
+        };
 
         const doneReword = await userCollection.updateOne({ email: email }, updatePoint);
 
@@ -647,12 +647,12 @@ async function run() {
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
         const userDetails = await userCollection.findOne({ email: email });
-        const newRewordPoint = userDetails?.rewardPoints + Math.ceil(totalPayment * 0.10);
+        const newRewordPoint = userDetails?.rewardPoints + Math.ceil(totalPayment * 0.1);
         const updatePoint = {
           $set: {
             rewardPoints: newRewordPoint,
           },
-        }
+        };
 
         const doneReword = await userCollection.updateOne({ email: email }, updatePoint);
 

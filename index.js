@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@tea
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
 
-// ssl config 
+// ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
 const store_passwd = process.env.PAYMENT_STORE_PASSWD;
 const is_live = false; //true for live, false for sandbox
@@ -30,34 +30,34 @@ async function run() {
     const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
     const pharmacyRegistrationApplication = database.collection("P.R. Applications");
-    const labCategoryCollection = database.collection("labCategory");
+    const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
     const labCartCollection = database.collection("labsCart");
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
+    const imagesCollection = database.collection("images");
 
     // =========== Medicines Related apis ===========
-    app.get("/all-medicines", async(req, res) => {
+    app.get("/all-medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     })
-    
+
     // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
       let query = { status: 'approved' };
       let sortObject = {};
+      let category
+      if (sbc) {
+        category = req?.query?.category
+      }
 
-      const page = parseInt(req.query.page) || 1;
-      const size = parseInt(req.params.size) || 2;
-      const skip = (page - 1) * size;
-
-
-      if (sbn || sbc) {
+      if (sbn) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved'  };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
       }
 
       if (req.query.sort === "phtl") {
@@ -71,16 +71,17 @@ async function run() {
       } else if (req.query.sort === "fOld") {
         sortObject = { date: 1 };
       }
-      const total = await medicineCollection.countDocuments()
-      const result = await medicineCollection.find(query).sort(sortObject).toArray();
+
+      const result = await medicineCollection.find(query, category).sort(sortObject).toArray();
       res.send(result);
     });
 
-    app.get("/medicines/:category", async (req, res) => {
-      const query = req.params.category;
-      const result = await medicineCollection.find({ "category.value": query }).toArray();
+    app.get("/medicinesc", async (req, res) => {
+      const category = req.query.category
+      const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
+
 
     app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
@@ -133,6 +134,20 @@ async function run() {
       const result1 = await medicineCollection.updateOne(filter, updatedRating, options);
       const result2 = await medicineCollection.updateOne(filter, updatedRatings, options);
       res.send(result2);
+    });
+
+    app.put("/update-medicine/:id", async(req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      // Remove the _id field from the updatedData
+      delete updatedData._id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedMedicine = {
+        $set: { ...updatedData },
+      };
+      const result = await medicineCollection.updateOne(filter, updatedMedicine, options);
+      res.send(result);
     });
 
     app.delete("/medicines/:id", async (req, res) => {
@@ -366,15 +381,16 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const email = req.body.email;
+      // const body = req.body
       const newApplication = {
         $set: {
-          applicationType: "Approved",
+          applicationType: req?.body?.applicationType,
         },
       };
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
       const updateUser = {
         $set: {
-          role: "Pharmacist",
+          role: req?.body?.role
         },
       };
       const result2 = await userCollection.updateOne({ email: email }, updateUser);
@@ -398,6 +414,45 @@ async function run() {
       }
       const result = await userCollection.insertOne(user);
       res.send(result);
+    });
+    app.put("/users/:email", async (req, res) => {
+      const userEmail = req.params.email; // Get the user's email from the URL parameter
+      const updatedUserData = req.body; // User data to update
+
+      // Create a query to find the user by their email
+      const query = { email: userEmail };
+
+      // Check if the user with the specified email exists
+      const existingUser = await userCollection.findOne(query);
+
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Update the user's profile data
+      const updateResult = await userCollection.updateOne(query, { $set: updatedUserData });
+
+      if (updateResult.modifiedCount === 0) {
+        return res.status(500).json({ message: "Failed to update user profile" });
+      }
+
+      res.status(200).json({ message: "User profile updated successfully" });
+    });
+    app.get("/users/:email", async (req, res) => {
+      const userEmail = req.params.email; // Get the user's email from the URL parameter
+
+      // Create a query to find the user by their email
+      const query = { email: userEmail };
+
+      // Find the user based on the email
+      const user = await userCollection.findOne(query);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return the user's profile data as a JSON response
+      res.status(200).json(user);
     });
 
     app.get("/users", async (req, res) => {
@@ -482,7 +537,7 @@ async function run() {
         });
         // Redirect the user to payment gateway
         let GatewayPageURL = apiResponse.GatewayPageURL;
-        res.send({ url: GatewayPageURL });
+        res.send({ url: GatewayPageURL, transId });
         // console.log('Redirecting to: ', GatewayPageURL)
       });
 
@@ -523,6 +578,30 @@ async function run() {
         res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
       });
     });
+
+    // upload images
+    app.get("/images", async (req, res) => {
+      const email = req.query?.email;
+      const name = req.query?.name;
+      let query = {};
+
+      if (email != 'undefined') {
+        query = { ...query, email: email };
+      }
+      if (name != 'undefined') {
+        query = { ...query, name: { $regex: name, $options: "i" } };
+      }
+      // console.log(query)
+
+      const result = await imagesCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.post("/images", async (req, res) => {
+      const data = req.body;
+      const result = await imagesCollection.insertOne(data);
+      res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

@@ -210,7 +210,7 @@ async function run() {
     });
 
     app.get("/labAllItems", async (req, res) => {
-      const result = await labItemsCollection.find().toArray();
+      const result = await labItemsCollection.find().sort({ report: 1 }).toArray();
       res.send(result);
     });
 

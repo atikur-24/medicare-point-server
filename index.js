@@ -37,6 +37,7 @@ async function run() {
     const blogCollection = database.collection("blogs");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const imagesCollection = database.collection("images");
+    const imagesNotifications = database.collection("notifications");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -617,6 +618,27 @@ async function run() {
     app.post("/images", async (req, res) => {
       const data = req.body;
       const result = await imagesCollection.insertOne(data);
+      res.send(result);
+    })
+
+    app.delete("/images/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
+
+    // Notification 
+    app.get("/notifications", async (req, res) => {
+      const email = req.query?.email;
+      let query = { email: email };
+
+      const result = await imagesNotifications.find(query).toArray();
+      res.send(result);
+    })
+
+    app.delete("/notifications/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesNotifications.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     })
 

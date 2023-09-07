@@ -44,6 +44,19 @@ async function run() {
       res.send(result);
     })
 
+    // home page search medicines 
+    app.get("/searchMedicinesByName", async (req, res) => {
+      const sbn = req.query?.name;
+      let query = {};
+
+      if (sbn) {
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+      }
+
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
@@ -136,7 +149,7 @@ async function run() {
       res.send(result2);
     });
 
-    app.put("/update-medicine/:id", async(req, res) => {
+    app.put("/update-medicine/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
       // Remove the _id field from the updatedData
@@ -210,7 +223,14 @@ async function run() {
     });
 
     app.get("/labAllItems", async (req, res) => {
-      const result = await labItemsCollection.find().sort({ report: 1 }).toArray();
+      const sbn = req.query?.name;
+      let query = {};
+
+      if (sbn != "undefined") { //it is made for lab search
+        query = { test_name: { $regex: sbn, $options: "i" } };
+      }
+
+      const result = await labItemsCollection.find(query).sort({ report: 1 }).toArray();
       res.send(result);
     });
 
@@ -259,6 +279,7 @@ async function run() {
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
+
 
     // =========== Lab Test Cart Related apis ===========
     app.get("/labsCart", async (req, res) => {
@@ -583,15 +604,11 @@ async function run() {
     app.get("/images", async (req, res) => {
       const email = req.query?.email;
       const name = req.query?.name;
-      let query = {};
+      let query = { email: email };
 
-      if (email != 'undefined') {
-        query = { ...query, email: email };
-      }
       if (name != 'undefined') {
         query = { ...query, name: { $regex: name, $options: "i" } };
       }
-      // console.log(query)
 
       const result = await imagesCollection.find(query).toArray();
       res.send(result);

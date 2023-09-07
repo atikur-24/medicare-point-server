@@ -44,6 +44,19 @@ async function run() {
       res.send(result);
     })
 
+    // home page search medicines 
+    app.get("/searchMedicinesByName", async (req, res) => {
+      const sbn = req.query?.name;
+      let query = {};
+
+      if (sbn) {
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+      }
+
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // status approved;
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
@@ -210,7 +223,14 @@ async function run() {
     });
 
     app.get("/labAllItems", async (req, res) => {
-      const result = await labItemsCollection.find().sort({ report: 1 }).toArray();
+      const sbn = req.query?.name;
+      let query = {};
+
+      if (sbn != "undefined") { //it is made for lab search
+        query = { test_name: { $regex: sbn, $options: "i" } };
+      }
+
+      const result = await labItemsCollection.find(query).sort({ report: 1 }).toArray();
       res.send(result);
     });
 
@@ -257,20 +277,6 @@ async function run() {
         $set: { ...body },
       };
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
-      res.send(result);
-    });
-
-
-    // lab page search lab tests 
-    app.get("/searchLabTestsByName", async (req, res) => {
-      const sbn = req.query?.name;
-      let query = {};
-
-      if (sbn) {
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
-      }
-
-      const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
 

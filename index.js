@@ -614,6 +614,113 @@ async function run() {
       });
     });
 
+    app.post("/labPayment", async (req, res) => {
+      const paymentData = req.body;
+      const cart = paymentData.cart;
+      const transId = new ObjectId().toString();
+
+      const { name, mobile, email, address, dateTime, age, note, area } = paymentData.personalInfo;
+
+      let totalPayment = 0.0 + 50.0; // or report
+      cart.forEach((singleItem) => {
+        totalPayment += singleItem.remaining;
+      });
+
+      const data = {
+        total_amount: totalPayment,
+        currency: "BDT",
+        tran_id: transId, // use unique tran_id for each api call
+        success_url: `http://localhost:5000/payment/success/${transId}`,
+        fail_url: `http://localhost:5000/payment/fail/${transId}`,
+        cancel_url: `http://localhost:5000/payment/fail/${transId}`,
+        ipn_url: "http://localhost:3030/ipn",
+        product_name: "Lab test.",
+        product_category: "lab test",
+        product_profile: "general",
+        cus_name: name,
+        cus_email: email,
+        cus_add1: area,
+        cus_add2: address,
+        cus_city: area,
+        cus_country: "Bangladesh",
+        cus_phone: mobile,
+        ship_name: name,
+        ship_country: "Bangladesh",
+
+        shipping_method: "Courier",
+        cus_state: "Dhaka",
+        cus_postcode: "1000",
+        cus_fax: "01711111111",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
+        ship_postcode: 1000,
+      };
+
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+
+      sslcz.init(data).then((apiResponse) => {
+        const a = cart.map(async (cp) => {
+          const cartId = cp._id;
+          delete cp._id;
+
+          const singleProduct = {
+            transId,
+            cartId: cartId,
+            status: "pending",
+            ...cp,
+            ...paymentData.personalInfo,
+          };
+
+          const createOrder = await bookedLabTestCollection.insertOne(singleProduct);
+        });
+
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL, transId, totalPayment });
+        // console.log('Redirecting to: ', GatewayPageURL)
+      });
+
+      app.post("/payment/success/:id", async (req, res) => {
+        orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
+
+        orderedItems.forEach(async (item) => {
+          const newStatus = {
+            $set: {
+              status: "success",
+            },
+          };
+
+          const query = { _id: new ObjectId(item.lab_id) };
+          const result1 = await labItemsCollection.findOne(query);
+          const updateQuantity = {
+            $set: {
+              totalBooked: result1.totalBooked + 1,
+            },
+          };
+
+          const options = { upsert: true };
+
+          const result2 = await bookedLabTestCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
+          const result3 = await labItemsCollection.updateOne({ _id: new ObjectId(item.lab_id) }, updateQuantity, options);
+          const result4 = await labCartCollection.deleteOne({ _id: new ObjectId(item.cartId) });
+        });
+
+        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.id}`);
+      });
+
+      app.post("/payment/fail/:id", async (req, res) => {
+        orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
+
+        orderedItems.forEach(async (item) => {
+          const result = await bookedLabTestCollection.deleteOne({ _id: new ObjectId(item._id.toString()) });
+        });
+
+        res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
+      });
+    });
+
     // upload images
     app.get("/images", async (req, res) => {
       const email = req.query?.email;

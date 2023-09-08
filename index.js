@@ -38,6 +38,7 @@ async function run() {
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
+    const bookedLabTestCollection = database.collection("bookedLabTest");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {

@@ -46,6 +46,7 @@ async function run() {
     })
 
     // home page search medicines
+    // home page search medicines
     app.get("/searchMedicinesByName", async (req, res) => {
       const sbn = req.query?.name;
       let query = {};

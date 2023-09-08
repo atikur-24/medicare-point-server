@@ -42,15 +42,15 @@ async function run() {
     app.get("/all-medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
-    })
+    });
 
-    // home page search medicines 
+    // home page search medicines
     app.get("/searchMedicinesByName", async (req, res) => {
       const sbn = req.query?.name;
       let query = {};
 
       if (sbn) {
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
 
       const result = await medicineCollection.find(query).toArray();
@@ -61,16 +61,16 @@ async function run() {
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
-      let query = { status: 'approved' };
+      let query = { status: "approved" };
       let sortObject = {};
-      let category
+      let category;
       if (sbc) {
-        category = req?.query?.category
+        category = req?.query?.category;
       }
 
       if (sbn) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
 
       if (req.query.sort === "phtl") {
@@ -90,11 +90,10 @@ async function run() {
     });
 
     app.get("/medicinesc", async (req, res) => {
-      const category = req.query.category
+      const category = req.query.category;
       const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
-
 
     app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
@@ -226,7 +225,8 @@ async function run() {
       const sbn = req.query?.name;
       let query = {};
 
-      if (sbn != "undefined") { //it is made for lab search
+      if (sbn != "undefined") {
+        //it is made for lab search
         query = { test_name: { $regex: sbn, $options: "i" } };
       }
 
@@ -279,7 +279,6 @@ async function run() {
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
-
 
     // =========== Lab Test Cart Related apis ===========
     app.get("/labsCart", async (req, res) => {
@@ -411,7 +410,7 @@ async function run() {
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
       const updateUser = {
         $set: {
-          role: req?.body?.role
+          role: req?.body?.role,
         },
       };
       const result2 = await userCollection.updateOne({ email: email }, updateUser);
@@ -606,19 +605,19 @@ async function run() {
       const name = req.query?.name;
       let query = { email: email };
 
-      if (name != 'undefined') {
+      if (name != "undefined") {
         query = { ...query, name: { $regex: name, $options: "i" } };
       }
 
       const result = await imagesCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
     app.post("/images", async (req, res) => {
       const data = req.body;
       const result = await imagesCollection.insertOne(data);
       res.send(result);
-    })
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

@@ -220,7 +220,6 @@ async function run() {
       const updateQuantity = {
         $set: req.body
       }
-
       const result = await mediCartCollection.updateOne(query, updateQuantity);
       res.send(result)
     });

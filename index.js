@@ -37,12 +37,26 @@ async function run() {
     const blogCollection = database.collection("blogs");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const imagesCollection = database.collection("images");
+    const imagesNotifications = database.collection("notifications");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     })
+
+    // home page search medicines
+    app.get("/searchMedicinesByName", async (req, res) => {
+      const sbn = req.query?.name;
+      let query = {};
+
+      if (sbn) {
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+      }
+
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // status approved;
     app.get("/medicines", async (req, res) => {
@@ -211,6 +225,19 @@ async function run() {
       res.send(result)
     });
 
+
+    // =========== Medicine Order related apis ===========
+    app.get("/medicinesOrder", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { email: email };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
@@ -224,7 +251,14 @@ async function run() {
     });
 
     app.get("/labAllItems", async (req, res) => {
-      const result = await labItemsCollection.find().toArray();
+      const sbn = req.query?.name;
+      let query = {};
+
+      if (sbn != "undefined") { //it is made for lab search
+        query = { test_name: { $regex: sbn, $options: "i" } };
+      }
+
+      const result = await labItemsCollection.find(query).sort({ report: 1 }).toArray();
       res.send(result);
     });
 
@@ -273,6 +307,7 @@ async function run() {
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
     });
+
 
     // =========== Lab Test Cart Related apis ===========
     app.get("/labsCart", async (req, res) => {
@@ -597,15 +632,11 @@ async function run() {
     app.get("/images", async (req, res) => {
       const email = req.query?.email;
       const name = req.query?.name;
-      let query = {};
+      let query = { email: email };
 
-      if (email != 'undefined') {
-        query = { ...query, email: email };
-      }
       if (name != 'undefined') {
         query = { ...query, name: { $regex: name, $options: "i" } };
       }
-      // console.log(query)
 
       const result = await imagesCollection.find(query).toArray();
       res.send(result);
@@ -614,6 +645,27 @@ async function run() {
     app.post("/images", async (req, res) => {
       const data = req.body;
       const result = await imagesCollection.insertOne(data);
+      res.send(result);
+    })
+
+    app.delete("/images/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
+
+    // Notification
+    app.get("/notifications", async (req, res) => {
+      const email = req.query?.email;
+      let query = { email: email };
+
+      const result = await imagesNotifications.find(query).toArray();
+      res.send(result);
+    })
+
+    app.delete("/notifications/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesNotifications.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     })
 

@@ -37,6 +37,7 @@ async function run() {
     const blogCollection = database.collection("blogs");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const imagesCollection = database.collection("images");
+    const imagesNotifications = database.collection("notifications");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -44,6 +45,7 @@ async function run() {
       res.send(result);
     });
 
+    // home page search medicines
     // home page search medicines
     app.get("/searchMedicinesByName", async (req, res) => {
       const sbn = req.query?.name;
@@ -179,6 +181,7 @@ async function run() {
       const result = await mediCartCollection.find(query).toArray();
       res.send(result);
     });
+
     app.post("/medicineCarts", async (req, res) => {
       const medicine = req.body;
       const filterMedicine = { medicine_Id: medicine.medicine_Id, email: medicine.email };
@@ -196,16 +199,39 @@ async function run() {
         res.send(result);
       }
     });
+
     app.delete("/medicineCarts/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await mediCartCollection.deleteOne(query);
       res.send(result);
     });
+
     app.delete("/medicineCarts", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const result = await mediCartCollection.deleteMany(query);
+      res.send(result);
+    });
+
+    app.patch("/update-quantity/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateQuantity = {
+        $set: req.body,
+      };
+      const result = await mediCartCollection.updateOne(query, updateQuantity);
+      res.send(result);
+    });
+
+    // =========== Medicine Order related apis ===========
+    app.get("/medicinesOrder", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { email: email };
+      const result = await orderedMedicinesCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -616,6 +642,27 @@ async function run() {
     app.post("/images", async (req, res) => {
       const data = req.body;
       const result = await imagesCollection.insertOne(data);
+      res.send(result);
+    });
+
+    app.delete("/images/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    // Notification
+    app.get("/notifications", async (req, res) => {
+      const email = req.query?.email;
+      let query = { email: email };
+
+      const result = await imagesNotifications.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete("/notifications/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await imagesNotifications.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 

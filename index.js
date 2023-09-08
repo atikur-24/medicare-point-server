@@ -136,7 +136,7 @@ async function run() {
       res.send(result2);
     });
 
-    app.put("/update-medicine/:id", async(req, res) => {
+    app.put("/update-medicine/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
       // Remove the _id field from the updatedData
@@ -167,6 +167,7 @@ async function run() {
       const result = await mediCartCollection.find(query).toArray();
       res.send(result);
     });
+
     app.post("/medicineCarts", async (req, res) => {
       const medicine = req.body;
       const filterMedicine = { medicine_Id: medicine.medicine_Id, email: medicine.email };
@@ -184,17 +185,30 @@ async function run() {
         res.send(result);
       }
     });
+
     app.delete("/medicineCarts/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await mediCartCollection.deleteOne(query);
       res.send(result);
     });
+
     app.delete("/medicineCarts", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const result = await mediCartCollection.deleteMany(query);
       res.send(result);
+    });
+
+    app.patch('/update-quantity/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateQuantity = {
+        $set: req.body
+      }
+
+      const result = await mediCartCollection.updateOne(query, updateQuantity);
+      res.send(result)
     });
 
     // =========== Lab Test related apis ===========

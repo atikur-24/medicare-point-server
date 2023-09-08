@@ -211,6 +211,19 @@ async function run() {
       res.send(result);
     });
 
+
+    // =========== Medicine Order related apis ===========
+    app.get("/medicinesOrder", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { email: email };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();

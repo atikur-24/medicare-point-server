@@ -378,7 +378,6 @@ async function run() {
     app.patch("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
       // const { body } = req.body;
-      console.log(id, req.body);
       const { category, name, image, type, cause, cure, prevention } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };

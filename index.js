@@ -48,7 +48,6 @@ async function run() {
     });
 
     // home page search medicines
-    // home page search medicines
     app.get("/searchMedicinesByName", async (req, res) => {
       const sbn = req.query?.name;
       let query = {};
@@ -123,7 +122,7 @@ async function run() {
     });
 
     // Adding reviews
-    app.post("/medicines/:id", async (req, res) => {
+    app.post("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -166,12 +165,12 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/medicine-status/:id", async(req, res) => {
+    app.patch("/medicine-status/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateStatus = {
-        $set: req.body
-      }
+        $set: req.body,
+      };
       const result = medicineCollection.updateOne(query, updateStatus);
       res.send(result);
     });
@@ -375,9 +374,8 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allHealthTips/:id", async (req, res) => {
+    app.put("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
-      // const { body } = req.body;
       console.log(id, req.body);
       const { category, name, image, type, cause, cure, prevention } = req.body;
       const filter = { _id: new ObjectId(id) };

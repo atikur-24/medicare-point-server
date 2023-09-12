@@ -25,21 +25,27 @@ async function run() {
   try {
     // database collection
     const database = client.db("medicareDB");
+    // medicines
     const medicineCollection = database.collection("medicines");
-    const userCollection = database.collection("users");
-    const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
-    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
+    const orderedMedicinesCollection = database.collection("orderedMedicines");
+    const reqToStockMedicineCollection = database.collection("requestToStockMedi");
+    // lab
     const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
     const labCartCollection = database.collection("labsCart");
+    const bookedLabTestCollection = database.collection("bookedLabTest");
+    const bookedLabCollection = database.collection("bookedLabTest");
+    // users
+    const userCollection = database.collection("users");
+    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
+    const pharmacistCollection = database.collection("pharmacists");
+    // health & blog suggestion
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
-    const orderedMedicinesCollection = database.collection("orderedMedicines");
+    // general
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
-    const bookedLabCollection = database.collection("bookedLabTest");
-    const bookedLabTestCollection = database.collection("bookedLabTest");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -244,6 +250,26 @@ async function run() {
       const query = { email: email };
       const result = await orderedMedicinesCollection.find(query).toArray();
       res.send(result);
+    });
+
+    // =========== Request to stock medicines related apis ===========
+    app.post("/requestToStock", async (req, res) => {
+      const medicineRequest = req.body;
+      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id, user_email: medicineRequest.user_email };
+      const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
+      if (existRequest) {
+        const updateCountDate = {
+          $set: {
+            request_count: existRequest.request_count + 1,
+            date: existRequest.date,
+          },
+        };
+        const rquestUpdate = await reqToStockMedicineCollection.updateOne(filterMediReq, updateCountDate);
+        res.send(rquestUpdate);
+      } else {
+        const result = await reqToStockMedicineCollection.insertOne(medicineRequest);
+        res.send(result);
+      }
     });
 
     // =========== Lab Test related apis ===========

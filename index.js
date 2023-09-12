@@ -400,7 +400,7 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/allHealthTips/:id", async (req, res) => {
+    app.patch("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
       const { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date } = req.body;
       const filter = { _id: new ObjectId(id) };

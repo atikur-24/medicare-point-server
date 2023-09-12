@@ -376,13 +376,12 @@ async function run() {
 
     app.put("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention } = req.body;
+      const { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention },
+        $set: { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date },
       };
       const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);

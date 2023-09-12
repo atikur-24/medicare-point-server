@@ -258,6 +258,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/labBooking", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { email: email };
+      const result = await bookedLabCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.get("/labCategory/:id", async (req, res) => {
       const id = req.params.id;
       const result = await labCategoryCollection.find({ _id: new ObjectId(id) }).toArray();
@@ -740,13 +750,15 @@ async function run() {
           };
           // const testName = orderedItems.test_name
 
+
           const updateQuantity = {
             $set: {
               totalBooked: result1.totalBooked + 1,
             },
           };
-          const options = { upsert: true };
+
           const notificationData2 = { name: "LabTest", email: item.email, date: orderDate, photoURL: "https://i.ibb.co/QcwbgTF/lab.png", url, deliveryTime };
+          const options = { upsert: true };
 
           const result2 = await bookedLabTestCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
           const result3 = await labItemsCollection.updateOne({ _id: new ObjectId(item.lab_id) }, updateQuantity, options);

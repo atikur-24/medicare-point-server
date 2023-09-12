@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const moment = require("moment");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
@@ -9,6 +10,8 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(cors());
 app.use(express.json());
+
+const orderDate = moment().format("Do MMM YY");
 
 // mongodb code start
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
@@ -25,21 +28,26 @@ async function run() {
   try {
     // database collection
     const database = client.db("medicareDB");
+    // medicine
     const medicineCollection = database.collection("medicines");
-    const userCollection = database.collection("users");
-    const pharmacistCollection = database.collection("pharmacists");
     const mediCartCollection = database.collection("medicinesCart");
-    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
+    const orderedMedicinesCollection = database.collection("orderedMedicines");
+    const reqToStockMedicineCollection = database.collection("requestToStockMedi");
+    // lab test
     const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
     const labCartCollection = database.collection("labsCart");
+    const bookedLabTestCollection = database.collection("bookedLabTest");
+    // users
+    const userCollection = database.collection("users");
+    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
+    const pharmacistCollection = database.collection("pharmacists");
+    // health tips & blog
     const healthTipsCollection = database.collection("healthTips");
     const blogCollection = database.collection("blogs");
-    const orderedMedicinesCollection = database.collection("orderedMedicines");
+    // general
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
-    const bookedLabCollection = database.collection("bookedLabTest");
-    const bookedLabTestCollection = database.collection("bookedLabTest");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -166,12 +174,12 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/medicine-status/:id", async(req, res) => {
+    app.patch("/medicine-status/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateStatus = {
-        $set: req.body
-      }
+        $set: req.body,
+      };
       const result = medicineCollection.updateOne(query, updateStatus);
       res.send(result);
     });
@@ -247,6 +255,26 @@ async function run() {
       res.send(result);
     });
 
+    // =========== Request to stock medicines related apis ===========
+    app.post("/requestToStock", async (req, res) => {
+      const medicineRequest = req.body;
+      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id, user_email: medicineRequest.user_email };
+      const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
+      if (existRequest) {
+        const updateCountDate = {
+          $set: {
+            request_count: existRequest.request_count + 1,
+            date: existRequest.date,
+          },
+        };
+        const rquestUpdate = await reqToStockMedicineCollection.updateOne(filterMediReq, updateCountDate);
+        res.send(rquestUpdate);
+      } else {
+        const result = await reqToStockMedicineCollection.insertOne(medicineRequest);
+        res.send(result);
+      }
+    });
+
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
@@ -259,7 +287,7 @@ async function run() {
         res.send([]);
       }
       const query = { email: email };
-      const result = await bookedLabCollection.find(query).toArray();
+      const result = await bookedLabTestCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -581,7 +609,7 @@ async function run() {
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
       sslcz.init(data).then((apiResponse) => {
-        const a = cart.map((cp) => {
+        const a = cart.map(async (cp) => {
           const { _id, medicine_Id, medicine_name, price, quantity, discount, email, category, image } = cp;
           const singleProduct = {
             transId,
@@ -601,7 +629,7 @@ async function run() {
             location,
             number,
           };
-          const createOrder = orderedMedicinesCollection.insertOne(singleProduct);
+          const createOrder = await orderedMedicinesCollection.insertOne(singleProduct);
         });
         // Redirect the user to payment gateway
         let GatewayPageURL = apiResponse.GatewayPageURL;
@@ -610,25 +638,35 @@ async function run() {
       });
 
       app.post("/payment/success/:id", async (req, res) => {
+        const transId = req.params.id;
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
         orderedItems.forEach(async (item) => {
+          const query = { _id: new ObjectId(item.medicine_Id) };
+          const result1 = await medicineCollection.findOne(query);
+
+          const url = "order-history";
+          const deliveryTime = "Your order is being processing";
+
+          const notificationData = { name: "medicines", email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
+
           const newStatus = {
             $set: {
               status: "success",
+              pharmacist_email: result1.pharmacist_email,
             },
           };
 
-          const query = { _id: new ObjectId(item.medicine_Id) };
-          const result1 = await medicineCollection.findOne(query);
+          const options = { upsert: true };
           const updateQuantity = {
             $set: {
               sellQuantity: result1.sellQuantity + item.quantity,
             },
           };
-          const result2 = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus);
+          const result2 = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
           const result3 = await medicineCollection.updateOne({ _id: new ObjectId(item.medicine_Id) }, updateQuantity);
           const result4 = await mediCartCollection.deleteOne({ _id: new ObjectId(item.cartId) });
+          const storeNotification = await imagesNotifications.insertOne(notificationData);
 
           // console.log("a", result2, result3, result4)
         });
@@ -637,6 +675,7 @@ async function run() {
       });
 
       app.post("/payment/fail/:id", async (req, res) => {
+        const transId = req.params.id;
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
         orderedItems.forEach(async (item) => {
@@ -716,34 +755,43 @@ async function run() {
       });
 
       app.post("/payment/success/:id", async (req, res) => {
+        const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
+        const url = "booked-lab-tests";
+        const deliveryTime = "Your order is being processing";
+
         orderedItems.forEach(async (item) => {
+          const query = { _id: new ObjectId(item.lab_id) };
+          const result1 = await labItemsCollection.findOne(query);
+
           const newStatus = {
             $set: {
               status: "success",
             },
           };
+          // const testName = orderedItems.test_name
 
-          const query = { _id: new ObjectId(item.lab_id) };
-          const result1 = await labItemsCollection.findOne(query);
           const updateQuantity = {
             $set: {
               totalBooked: result1.totalBooked + 1,
             },
           };
 
+          const notificationData2 = { name: "LabTest", email: item.email, date: orderDate, photoURL: "https://i.ibb.co/QcwbgTF/lab.png", url, deliveryTime };
           const options = { upsert: true };
 
           const result2 = await bookedLabTestCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
           const result3 = await labItemsCollection.updateOne({ _id: new ObjectId(item.lab_id) }, updateQuantity, options);
           const result4 = await labCartCollection.deleteOne({ _id: new ObjectId(item.cartId) });
+          const storeNotification = await imagesNotifications.insertOne(notificationData2);
         });
 
         res.redirect(`http://localhost:5173/paymentSuccess/${req.params.id}`);
       });
 
       app.post("/payment/fail/:id", async (req, res) => {
+        const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
         orderedItems.forEach(async (item) => {
@@ -786,6 +834,12 @@ async function run() {
       let query = { email: email };
 
       const result = await imagesNotifications.find(query).toArray();
+      res.send(result);
+    });
+
+    app.post("/notifications", async (req, res) => {
+      const data = req.body;
+      const result = await imagesNotifications.insertOne(data);
       res.send(result);
     });
 

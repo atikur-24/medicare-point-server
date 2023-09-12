@@ -56,7 +56,6 @@ async function run() {
       if (sbn) {
         query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
-
       const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
@@ -538,6 +537,8 @@ async function run() {
       const result = await userCollection.updateOne(query, newRole);
       res.send(result);
     });
+
+    
 
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {

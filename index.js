@@ -264,7 +264,7 @@ async function run() {
         res.send([]);
       }
       const query = { email: email };
-      const result = await bookedLabCollection.find(query).toArray();
+      const result = await bookedLabTestCollection.find(query).toArray();
       res.send(result);
     });
 

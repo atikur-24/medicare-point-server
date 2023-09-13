@@ -48,6 +48,7 @@ async function run() {
     // general
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
+    const prescriptionCollection = database.collection("prescription");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -407,12 +408,12 @@ async function run() {
       const id = req.params.id;
       // const { body } = req.body;
       console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention, date, doctorName, doctorDepartment } = req.body;
+      const { category, name, image, type, cause, cure, prevention } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention, date, doctorName, doctorDepartment },
+        $set: { category, name, image, type, cause, cure, prevention },
       };
       const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);
@@ -817,7 +818,16 @@ async function run() {
     });
 
     app.post("/images", async (req, res) => {
+      const query = req?.query?.collectionName;
       const data = req.body;
+
+      if (query === "prescription") {
+        data.date = orderDate;
+        const result = await prescriptionCollection.insertOne(data);
+        res.send(result);
+        return;
+      }
+
       const result = await imagesCollection.insertOne(data);
       res.send(result);
     });

@@ -407,12 +407,12 @@ async function run() {
       const id = req.params.id;
       // const { body } = req.body;
       console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention } = req.body;
+      const { category, name, image, type, cause, cure, prevention, date, doctorName, doctorDepartment } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention },
+        $set: { category, name, image, type, cause, cure, prevention, date, doctorName, doctorDepartment },
       };
       const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);

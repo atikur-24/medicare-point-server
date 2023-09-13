@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const moment = require('moment');
+const moment = require("moment");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
@@ -47,7 +47,7 @@ async function run() {
     app.get("/all-medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     // home page search medicines
     // home page search medicines
@@ -56,7 +56,7 @@ async function run() {
       let query = {};
 
       if (sbn) {
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
 
       const result = await medicineCollection.find(query).toArray();
@@ -67,16 +67,16 @@ async function run() {
     app.get("/medicines", async (req, res) => {
       const sbn = req.query?.name;
       const sbc = req.query?.category;
-      let query = { status: 'approved' };
+      let query = { status: "approved" };
       let sortObject = {};
-      let category
+      let category;
       if (sbc) {
-        category = req?.query?.category
+        category = req?.query?.category;
       }
 
       if (sbn) {
         // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: 'approved' };
+        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
 
       if (req.query.sort === "phtl") {
@@ -96,11 +96,10 @@ async function run() {
     });
 
     app.get("/medicinesc", async (req, res) => {
-      const category = req.query.category
+      const category = req.query.category;
       const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
-
 
     app.get("/medicines/details/:id", async (req, res) => {
       const id = req.params.id;
@@ -173,8 +172,8 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateStatus = {
-        $set: req.body
-      }
+        $set: req.body,
+      };
       const result = medicineCollection.updateOne(query, updateStatus);
       res.send(result);
     });
@@ -229,16 +228,15 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/update-quantity/:id', async (req, res) => {
+    app.patch("/update-quantity/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateQuantity = {
-        $set: req.body
-      }
+        $set: req.body,
+      };
       const result = await mediCartCollection.updateOne(query, updateQuantity);
-      res.send(result)
+      res.send(result);
     });
-
 
     // =========== Medicine Order related apis ===========
     app.get("/medicinesOrder", async (req, res) => {
@@ -250,7 +248,6 @@ async function run() {
       const result = await orderedMedicinesCollection.find(query).toArray();
       res.send(result);
     });
-
 
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
@@ -278,7 +275,8 @@ async function run() {
       const sbn = req.query?.name;
       let query = {};
 
-      if (sbn != "undefined") { //it is made for lab search
+      if (sbn != "undefined") {
+        //it is made for lab search
         query = { test_name: { $regex: sbn, $options: "i" } };
       }
 
@@ -332,7 +330,6 @@ async function run() {
       res.send(result);
     });
 
-
     // =========== Lab Test Cart Related apis ===========
     app.get("/labsCart", async (req, res) => {
       const email = req.query.email;
@@ -384,12 +381,12 @@ async function run() {
       const id = req.params.id;
       // const { body } = req.body;
       console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention } = req.body;
+      const { category, name, image, type, cause, cure, prevention, date, doctorName, doctorDepartment } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention },
+        $set: { category, name, image, type, cause, cure, prevention, date, doctorName, doctorDepartment },
       };
       const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);
@@ -463,7 +460,7 @@ async function run() {
       const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
       const updateUser = {
         $set: {
-          role: req?.body?.role
+          role: req?.body?.role,
         },
       };
       const result2 = await userCollection.updateOne({ email: email }, updateUser);
@@ -630,15 +627,15 @@ async function run() {
           const newStatus = {
             $set: {
               status: "success",
-              pharmacist_email: result1.pharmacist_email
+              pharmacist_email: result1.pharmacist_email,
             },
           };
 
           const options = { upsert: true };
           const updateQuantity = {
             $set: {
-              sellQuantity: result1.sellQuantity + item.quantity
-            }
+              sellQuantity: result1.sellQuantity + item.quantity,
+            },
           };
           const result2 = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
           const result3 = await medicineCollection.updateOne({ _id: new ObjectId(item.medicine_Id) }, updateQuantity);
@@ -738,7 +735,6 @@ async function run() {
         const url = "booked-lab-tests";
         const deliveryTime = "Your order is being processing";
 
-
         orderedItems.forEach(async (item) => {
           const query = { _id: new ObjectId(item.lab_id) };
           const result1 = await labItemsCollection.findOne(query);
@@ -749,7 +745,6 @@ async function run() {
             },
           };
           // const testName = orderedItems.test_name
-
 
           const updateQuantity = {
             $set: {
@@ -787,25 +782,25 @@ async function run() {
       const name = req.query?.name;
       let query = { email: email };
 
-      if (name != 'undefined') {
+      if (name != "undefined") {
         query = { ...query, name: { $regex: name, $options: "i" } };
       }
 
       const result = await imagesCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
     app.post("/images", async (req, res) => {
       const data = req.body;
       const result = await imagesCollection.insertOne(data);
       res.send(result);
-    })
+    });
 
     app.delete("/images/:id", async (req, res) => {
       const id = req.params.id;
       const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
-    })
+    });
 
     // Notification
     app.get("/notifications", async (req, res) => {
@@ -814,19 +809,19 @@ async function run() {
 
       const result = await imagesNotifications.find(query).toArray();
       res.send(result);
-    })
+    });
 
     app.post("/notifications", async (req, res) => {
       const data = req.body;
       const result = await imagesNotifications.insertOne(data);
       res.send(result);
-    })
+    });
 
     app.delete("/notifications/:id", async (req, res) => {
       const id = req.params.id;
       const result = await imagesNotifications.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
-    })
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

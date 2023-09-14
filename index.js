@@ -17,7 +17,17 @@ const orderDate = moment().format("Do MMM YY");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+});
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -26,6 +36,12 @@ const is_live = false; //true for live, false for sandbox
 
 async function run() {
   try {
+    client.connect((err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+    });
     // database collection
     const database = client.db("medicareDB");
     // medicine
@@ -48,6 +64,7 @@ async function run() {
     // general
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
+    const prescriptionCollection = database.collection("prescription");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -836,7 +853,16 @@ async function run() {
     });
 
     app.post("/images", async (req, res) => {
+      const query = req?.query?.collectionName;
       const data = req.body;
+
+      if (query === "prescription") {
+        data.date = orderDate;
+        const result = await prescriptionCollection.insertOne(data);
+        res.send(result);
+        return;
+      }
+
       const result = await imagesCollection.insertOne(data);
       res.send(result);
     });

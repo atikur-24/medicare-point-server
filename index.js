@@ -839,6 +839,7 @@ async function run() {
 
       if (query === "prescription") {
         data.date = orderDate;
+        // data.time = 
         const result = await prescriptionCollection.insertOne(data);
         res.send(result);
         return;

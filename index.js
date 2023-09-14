@@ -190,6 +190,17 @@ async function run() {
       res.send(result);
     });
 
+    app.put("/medicine-feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedFeedback = req.body;
+      const query = { _id: new ObjectId(id) };
+      const newFeedback = {
+        $set: { feedback: updatedFeedback.feedback }
+      }
+      const result = await medicineCollection.updateOne(query, newFeedback, { upsert: true });
+      res.send(result);
+    });
+
     // =========== Medicines Cart Related apis ===========
     app.get("/medicineCarts", async (req, res) => {
       const email = req.query.email;
@@ -566,7 +577,14 @@ async function run() {
       res.send(result);
     });
 
-    
+    app.delete("/delete-user/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    });
+
+
 
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {

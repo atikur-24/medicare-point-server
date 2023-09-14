@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const orderDate = moment().format("Do MMM YY");
+const orderDate = moment().format("Do MMM YY, h:mm a");;
 const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 
 // mongodb code start
@@ -67,6 +67,7 @@ async function run() {
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
+
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -668,7 +669,7 @@ async function run() {
           const url = "order-history";
           const deliveryTime = "Your order is being processing";
 
-          const notificationData = { name: "medicines", email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
+          const notificationData = { name: `New order: ${item.medicine_name}`, email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
 
           const newStatus = {
             $set: {
@@ -779,7 +780,7 @@ async function run() {
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
         const url = "booked-lab-tests";
-        const deliveryTime = "Your order is being processing";
+        const deliveryTime = "We will collect sample at your chosen time";
 
         orderedItems.forEach(async (item) => {
           const query = { _id: new ObjectId(item.lab_id) };
@@ -798,7 +799,9 @@ async function run() {
             },
           };
 
-          const notificationData2 = { name: "LabTest", email: item.email, date: orderDate, photoURL: "https://i.ibb.co/QcwbgTF/lab.png", url, deliveryTime };
+          const notificationData2 = {
+            name: `LabBooked: ${item.test_name}`, email: item.email, date: orderDate, photoURL: "https://i.ibb.co/QcwbgTF/lab.png", url, deliveryTime
+          };
           const options = { upsert: true };
 
           const result2 = await bookedLabTestCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
@@ -841,8 +844,6 @@ async function run() {
       const data = req.body;
 
       if (query === "prescription") {
-        data.date = orderDate;
-        // data.time = 
         const result = await prescriptionCollection.insertOne(data);
         res.send(result);
         return;
@@ -861,7 +862,12 @@ async function run() {
     // Notification
     app.get("/notifications", async (req, res) => {
       const email = req.query?.email;
-      let query = { email: email };
+      const role = req.query?.role;
+      let query = {
+        $or: [
+          { email: email }, { receiver: role }
+        ]
+      };
 
       const result = await imagesNotifications.find(query).toArray();
       res.send(result);
@@ -876,6 +882,21 @@ async function run() {
     app.delete("/notifications/:id", async (req, res) => {
       const id = req.params.id;
       const result = await imagesNotifications.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    // prescription 
+    app.get("/prescriptions", async (req, res) => {
+      const result = await prescriptionCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/prescriptions", async (req, res) => {
+      const data = req.body;
+      let result;
+      data.map(async singleCart => {
+        result = await mediCartCollection.insertOne(singleCart);
+      })
       res.send(result);
     });
 

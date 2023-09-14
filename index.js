@@ -83,7 +83,6 @@ async function run() {
       if (sbn) {
         query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
       }
-
       const result = await medicineCollection.find(query).toArray();
       res.send(result);
     });
@@ -207,6 +206,17 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.put("/medicine-feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedFeedback = req.body;
+      const query = { _id: new ObjectId(id) };
+      const newFeedback = {
+        $set: { feedback: updatedFeedback.feedback }
+      }
+      const result = await medicineCollection.updateOne(query, newFeedback, { upsert: true });
       res.send(result);
     });
 
@@ -506,9 +516,10 @@ async function run() {
       const updateUser = {
         $set: {
           role: req?.body?.role,
+          pharmacistDetail: req?.body?.pharmacistDetail,
         },
       };
-      const result2 = await userCollection.updateOne({ email: email }, updateUser);
+      const result2 = await userCollection.updateOne({ email: email }, updateUser, { upsert: true });
       res.send({ result, result2 });
     });
 
@@ -585,6 +596,22 @@ async function run() {
       const result = await userCollection.updateOne(query, newRole);
       res.send(result);
     });
+
+    app.get('/all-pharmacist/:role', async (req, res) => {
+      const role = req.params.role;
+      const query = { role: role };
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete("/delete-user/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    });
+
+
 
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {

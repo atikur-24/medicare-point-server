@@ -11,24 +11,24 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const orderDate = moment().format("Do MMM YY, h:mm a");;
+const orderDate = moment().format("Do MMM YY, h:mm a");
 const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 
 // mongodb code start
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  maxPoolSize: 10,
-});
+const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+// const client = new MongoClient(uri, {
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   },
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+//   maxPoolSize: 10,
+// });
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -37,13 +37,13 @@ const is_live = false; //true for live, false for sandbox
 
 async function run() {
   try {
-    client.connect((err) => {
-      if (err) {
-        console.error(err);
-        console.log("HELLO ERRRRRRRRRRRRRRRRRR RRRRRR");
-        return;
-      }
-    });
+    // client.connect((err) => {
+    //   if (err) {
+    //     console.error(err);
+    //     console.log("HELLO ERRRRRRRRRRRRRRRRRR RRRRRR");
+    //     return;
+    //   }
+    // });
     // database collection
     const database = client.db("medicareDB");
     // medicine
@@ -67,7 +67,6 @@ async function run() {
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
-
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -215,8 +214,8 @@ async function run() {
       const updatedFeedback = req.body;
       const query = { _id: new ObjectId(id) };
       const newFeedback = {
-        $set: { feedback: updatedFeedback.feedback }
-      }
+        $set: { feedback: updatedFeedback.feedback },
+      };
       const result = await medicineCollection.updateOne(query, newFeedback, { upsert: true });
       res.send(result);
     });
@@ -598,7 +597,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/all-pharmacist/:role', async (req, res) => {
+    app.get("/all-pharmacist/:role", async (req, res) => {
       const role = req.params.role;
       const query = { role: role };
       const result = await userCollection.find(query).toArray();
@@ -611,8 +610,6 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     });
-
-
 
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {
@@ -827,7 +824,12 @@ async function run() {
           };
 
           const notificationData2 = {
-            name: `LabBooked: ${item.test_name}`, email: item.email, date: orderDate, photoURL: "https://i.ibb.co/QcwbgTF/lab.png", url, deliveryTime
+            name: `LabBooked: ${item.test_name}`,
+            email: item.email,
+            date: orderDate,
+            photoURL: "https://i.ibb.co/QcwbgTF/lab.png",
+            url,
+            deliveryTime,
           };
           const options = { upsert: true };
 
@@ -891,9 +893,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [
-          { email: email }, { receiver: role }
-        ]
+        $or: [{ email: email }, { receiver: role }],
       };
 
       const result = await imagesNotifications.find(query).toArray();
@@ -912,7 +912,7 @@ async function run() {
       res.send(result);
     });
 
-    // prescription 
+    // prescription
     app.get("/prescriptions", async (req, res) => {
       const result = await prescriptionCollection.find().toArray();
       res.send(result);
@@ -921,9 +921,9 @@ async function run() {
     app.post("/prescriptions", async (req, res) => {
       const data = req.body;
       let result;
-      data.map(async singleCart => {
+      data.map(async (singleCart) => {
         result = await mediCartCollection.insertOne(singleCart);
-      })
+      });
       res.send(result);
     });
 

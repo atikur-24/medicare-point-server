@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 const orderDate = moment().format("Do MMM YY");
+const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 
 // mongodb code start
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
@@ -39,6 +40,7 @@ async function run() {
     client.connect((err) => {
       if (err) {
         console.error(err);
+        console.log("HELLO ERRRRRRRRRRRRRRRRRR RRRRRR");
         return;
       }
     });
@@ -656,6 +658,7 @@ async function run() {
         const a = cart.map(async (cp) => {
           const { _id, medicine_Id, medicine_name, price, quantity, discount, email, category, image } = cp;
           const singleProduct = {
+            dateAndTime,
             transId,
             cartId: _id,
             medicine_Id,

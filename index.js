@@ -514,9 +514,10 @@ async function run() {
       const updateUser = {
         $set: {
           role: req?.body?.role,
+          pharmacistDetail: req?.body?.pharmacistDetail,
         },
       };
-      const result2 = await userCollection.updateOne({ email: email }, updateUser);
+      const result2 = await userCollection.updateOne({ email: email }, updateUser, { upsert: true });
       res.send({ result, result2 });
     });
 
@@ -591,6 +592,13 @@ async function run() {
         $set: req.body,
       };
       const result = await userCollection.updateOne(query, newRole);
+      res.send(result);
+    });
+
+    app.get('/all-pharmacist/:role', async (req, res) => {
+      const role = req.params.role;
+      const query = { role: role };
+      const result = await userCollection.find(query).toArray();
       res.send(result);
     });
 

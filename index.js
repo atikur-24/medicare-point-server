@@ -18,17 +18,17 @@ const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   },
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-//   maxPoolSize: 10,
-// });
+// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+});
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -37,13 +37,13 @@ const is_live = false; //true for live, false for sandbox
 
 async function run() {
   try {
-    // client.connect((err) => {
-    //   if (err) {
-    //     console.error(err);
-    //     console.log("HELLO ERRRRRRRRRRRRRRRRRR RRRRRR");
-    //     return;
-    //   }
-    // });
+    client.connect((err) => {
+      if (err) {
+        console.error(err);
+        console.log("HELLO ERRRRRRRRRRRRRRRRRR RRRRRR");
+        return;
+      }
+    });
     // database collection
     const database = client.db("medicareDB");
     // medicine

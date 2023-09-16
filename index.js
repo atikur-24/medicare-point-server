@@ -690,7 +690,7 @@ async function run() {
           const query = { _id: new ObjectId(item.medicine_Id) };
           const result1 = await medicineCollection.findOne(query);
 
-          const url = "order-history";
+          const url = "dashboard/order-history";
           const deliveryTime = "Your order is being processing";
 
           const notificationData = { name: `New order: ${item.medicine_name}`, email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
@@ -803,7 +803,7 @@ async function run() {
         const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
-        const url = "booked-lab-tests";
+        const url = "dashboard/booked-lab-tests";
         const deliveryTime = "We will collect sample at your chosen time";
 
         orderedItems.forEach(async (item) => {
@@ -896,7 +896,7 @@ async function run() {
         $or: [{ email: email }, { receiver: role }],
       };
 
-      const result = await imagesNotifications.find(query).toArray();
+      const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
       res.send(result);
     });
 
@@ -914,16 +914,36 @@ async function run() {
 
     // prescription
     app.get("/prescriptions", async (req, res) => {
-      const result = await prescriptionCollection.find().toArray();
+      const result = await prescriptionCollection.find().sort({ date: -1 }).toArray();
       res.send(result);
     });
 
     app.post("/prescriptions", async (req, res) => {
       const data = req.body;
       let result;
-      data.map(async (singleCart) => {
+      data.cart?.map(async singleCart => {
         result = await mediCartCollection.insertOne(singleCart);
-      });
+      })
+
+      const newStatus = {
+        $set: {
+          status: "success",
+        },
+      };
+      const options = { upsert: true };
+      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options)
+
+      const notificationData = {
+        name: "Medicines has been added to your cart", email: data?.cart[0]?.email, date: orderDate, photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png", url: "medicineCarts", deliveryTime: "Now your can make the order"
+      };
+      const result3 = await imagesNotifications.insertOne(notificationData);
+
+      res.send(result2);
+    });
+
+    app.delete("/prescriptions/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await prescriptionCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 

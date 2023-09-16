@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const orderDate = moment().format("Do MMM YY, h:mm a");;
+const orderDate = moment().format("Do MMM YY, h:mm a");
 const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 
 // mongodb code start
@@ -67,7 +67,6 @@ async function run() {
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
-
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -215,8 +214,8 @@ async function run() {
       const updatedFeedback = req.body;
       const query = { _id: new ObjectId(id) };
       const newFeedback = {
-        $set: { feedback: updatedFeedback.feedback }
-      }
+        $set: { feedback: updatedFeedback.feedback },
+      };
       const result = await medicineCollection.updateOne(query, newFeedback, { upsert: true });
       res.send(result);
     });
@@ -433,16 +432,16 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allHealthTips/:id", async (req, res) => {
+    app.put("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
       // const { body } = req.body;
       console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention } = req.body;
+      const { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention },
+        $set: { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date },
       };
       const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);
@@ -598,7 +597,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/all-pharmacist/:role', async (req, res) => {
+    app.get("/all-pharmacist/:role", async (req, res) => {
       const role = req.params.role;
       const query = { role: role };
       const result = await userCollection.find(query).toArray();
@@ -611,8 +610,6 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     });
-
-
 
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {
@@ -693,7 +690,7 @@ async function run() {
           const query = { _id: new ObjectId(item.medicine_Id) };
           const result1 = await medicineCollection.findOne(query);
 
-          const url = "order-history";
+          const url = "dashboard/order-history";
           const deliveryTime = "Your order is being processing";
 
           const notificationData = { name: `New order: ${item.medicine_name}`, email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
@@ -806,7 +803,7 @@ async function run() {
         const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
-        const url = "booked-lab-tests";
+        const url = "dashboard/booked-lab-tests";
         const deliveryTime = "We will collect sample at your chosen time";
 
         orderedItems.forEach(async (item) => {
@@ -827,7 +824,12 @@ async function run() {
           };
 
           const notificationData2 = {
-            name: `LabBooked: ${item.test_name}`, email: item.email, date: orderDate, photoURL: "https://i.ibb.co/QcwbgTF/lab.png", url, deliveryTime
+            name: `LabBooked: ${item.test_name}`,
+            email: item.email,
+            date: orderDate,
+            photoURL: "https://i.ibb.co/QcwbgTF/lab.png",
+            url,
+            deliveryTime,
           };
           const options = { upsert: true };
 
@@ -891,9 +893,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [
-          { email: email }, { receiver: role }
-        ]
+        $or: [{ email: email }, { receiver: role }],
       };
 
       const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
@@ -912,7 +912,7 @@ async function run() {
       res.send(result);
     });
 
-    // prescription 
+    // prescription
     app.get("/prescriptions", async (req, res) => {
       const result = await prescriptionCollection.find().sort({ date: -1 }).toArray();
       res.send(result);

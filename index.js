@@ -921,9 +921,9 @@ async function run() {
     app.post("/prescriptions", async (req, res) => {
       const data = req.body;
       let result;
-      data.cart?.map(async singleCart => {
+      data.cart?.map(async (singleCart) => {
         result = await mediCartCollection.insertOne(singleCart);
-      })
+      });
 
       const newStatus = {
         $set: {
@@ -931,10 +931,15 @@ async function run() {
         },
       };
       const options = { upsert: true };
-      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options)
+      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options);
 
       const notificationData = {
-        name: "Medicines has been added to your cart", email: data?.cart[0]?.email, date: orderDate, photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png", url: "medicineCarts", deliveryTime: "Now your can make the order"
+        name: "Medicines has been added to your cart",
+        email: data?.cart[0]?.email,
+        date: orderDate,
+        photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png",
+        url: "medicineCarts",
+        deliveryTime: "Now your can make the order",
       };
       const result3 = await imagesNotifications.insertOne(notificationData);
 

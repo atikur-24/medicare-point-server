@@ -149,7 +149,7 @@ async function run() {
     });
 
     // Adding reviews
-    app.post("/medicines/:id", async (req, res) => {
+    app.post("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -830,7 +830,7 @@ async function run() {
             photoURL: "https://i.ibb.co/QcwbgTF/lab.png",
             url,
             deliveryTime,
-            read: "no"
+            read: "no",
           };
           const options = { upsert: true };
 
@@ -918,14 +918,14 @@ async function run() {
     app.patch("/notifications", async (req, res) => {
       const data = req.body;
 
-      data.forEach(d => {
+      data.forEach((d) => {
         const updateStatus = {
           $set: {
-            read: "yes"
-          }
+            read: "yes",
+          },
         };
         const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
-      })
+      });
       res.send("Make all notifications as read");
     });
 
@@ -939,9 +939,9 @@ async function run() {
     app.post("/prescriptions", async (req, res) => {
       const data = req.body;
       let result;
-      data.cart?.map(async singleCart => {
+      data.cart?.map(async (singleCart) => {
         result = await mediCartCollection.insertOne(singleCart);
-      })
+      });
 
       const newStatus = {
         $set: {
@@ -949,10 +949,16 @@ async function run() {
         },
       };
       const options = { upsert: true };
-      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options)
+      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options);
 
       const notificationData = {
-        name: "Medicines has been added to your cart", read: "no", email: data?.cart[0]?.email, date: orderDate, photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png", url: "medicineCarts", deliveryTime: "Now your can make the order"
+        name: "Medicines has been added to your cart",
+        read: "no",
+        email: data?.cart[0]?.email,
+        date: orderDate,
+        photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png",
+        url: "medicineCarts",
+        deliveryTime: "Now your can make the order",
       };
       const result3 = await imagesNotifications.insertOne(notificationData);
 

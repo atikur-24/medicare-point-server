@@ -67,6 +67,7 @@ async function run() {
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
+    const dashboardDataCollection = database.collection("dashboardData");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -982,6 +983,54 @@ async function run() {
       const result = await prescriptionCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
+
+    // Dashboard home 
+    app.get("/dashboard/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email })
+
+      if (user?.role === "admin") {
+        const allUsers = await userCollection.find().toArray();
+        const allMedicines = await medicineCollection.find().toArray();
+        const allLabs = await labItemsCollection.find().toArray();
+
+        const users = allUsers.length;
+        const medicines = allMedicines.length;
+        const labTests = allLabs.length;
+        const brands = 8;
+        const labs = 15;
+        let pharmacist = 0;
+        allUsers.forEach(singleUser => {
+          if (singleUser.role === "Pharmacist") {
+            pharmacist = pharmacist + 1;
+          }
+        })
+
+        const info = { users, medicines, labTests, brands, labs, pharmacist };
+
+        const newData = {
+          $set: {
+            info,
+          },
+        };
+        const result = await dashboardDataCollection.updateOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") }, newData);
+        // console.log(result)
+        res.send(result);
+        return;
+
+      }
+      res.send({ data: "no data found" })
+    })
+
+    app.get("/adminHomeData/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+
+      if (user?.role === "admin") {
+        const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
+        res.send(result);
+      }
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

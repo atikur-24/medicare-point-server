@@ -369,17 +369,20 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/labItems/:id", async (req, res) => {
-      const id = req.params.id;
-      const { body } = req.body;
+    app.put("/labItems/:id", async (req, res) => {
+      // const id = req.params.id;
+      const { data, _id } = req.body;
+      delete data._id;
+
+
       // const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
 
-      const filter = { _id: new ObjectId(id) };
+      const filter = { _id: new ObjectId(_id) };
       const options = { upsert: true };
 
       const updatedLabTest = {
         // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
-        $set: { ...body },
+        $set: { ...data },
       };
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
@@ -693,7 +696,16 @@ async function run() {
           const url = "dashboard/order-history";
           const deliveryTime = "Your order is being processing";
 
-          const notificationData = { name: `New order: ${item.medicine_name}`, read: "no", email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
+          const notificationData = {
+            name: `New order: ${item.medicine_name}`,
+            read: "no",
+            email: item.email,
+            date: orderDate,
+            photoURL: item.image,
+            url,
+            deliveryTime,
+            pharmacist_email: result1.pharmacist_email,
+          };
 
           const newStatus = {
             $set: {

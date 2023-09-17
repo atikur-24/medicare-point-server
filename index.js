@@ -149,7 +149,7 @@ async function run() {
     });
 
     // Adding reviews
-    app.post("/medicines/:id", async (req, res) => {
+    app.post("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
       const filter = { _id: new ObjectId(id) };

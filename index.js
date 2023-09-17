@@ -67,6 +67,7 @@ async function run() {
     const imagesCollection = database.collection("images");
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
+    const dashboardDataCollection = database.collection("dashboardData");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -149,7 +150,7 @@ async function run() {
     });
 
     // Adding reviews
-    app.post("/medicines/:id", async (req, res) => {
+    app.post("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -369,17 +370,20 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/labItems/:id", async (req, res) => {
-      const id = req.params.id;
-      const { body } = req.body;
+    app.put("/labItems/:id", async (req, res) => {
+      // const id = req.params.id;
+      const { data, _id } = req.body;
+      delete data._id;
+
+
       // const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
 
-      const filter = { _id: new ObjectId(id) };
+      const filter = { _id: new ObjectId(_id) };
       const options = { upsert: true };
 
       const updatedLabTest = {
         // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
-        $set: { ...body },
+        $set: { ...data },
       };
       const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
       res.send(result);
@@ -432,16 +436,16 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allHealthTips/:id", async (req, res) => {
+    app.put("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
       // const { body } = req.body;
       console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention } = req.body;
+      const { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention },
+        $set: { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date },
       };
       const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
       res.send(result);
@@ -690,10 +694,19 @@ async function run() {
           const query = { _id: new ObjectId(item.medicine_Id) };
           const result1 = await medicineCollection.findOne(query);
 
-          const url = "order-history";
+          const url = "dashboard/order-history";
           const deliveryTime = "Your order is being processing";
 
-          const notificationData = { name: `New order: ${item.medicine_name}`, email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
+          const notificationData = {
+            name: `New order: ${item.medicine_name}`,
+            read: "no",
+            email: item.email,
+            date: orderDate,
+            photoURL: item.image,
+            url,
+            deliveryTime,
+            pharmacist_email: result1.pharmacist_email,
+          };
 
           const newStatus = {
             $set: {
@@ -803,7 +816,7 @@ async function run() {
         const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
-        const url = "booked-lab-tests";
+        const url = "dashboard/booked-lab-tests";
         const deliveryTime = "We will collect sample at your chosen time";
 
         orderedItems.forEach(async (item) => {
@@ -830,6 +843,7 @@ async function run() {
             photoURL: "https://i.ibb.co/QcwbgTF/lab.png",
             url,
             deliveryTime,
+            read: "no",
           };
           const options = { upsert: true };
 
@@ -873,6 +887,7 @@ async function run() {
       const data = req.body;
 
       if (query === "prescription") {
+        data.read = "no";
         const result = await prescriptionCollection.insertOne(data);
         res.send(result);
         return;
@@ -896,12 +911,13 @@ async function run() {
         $or: [{ email: email }, { receiver: role }],
       };
 
-      const result = await imagesNotifications.find(query).toArray();
+      const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
       res.send(result);
     });
 
     app.post("/notifications", async (req, res) => {
       const data = req.body;
+      data.read = "no";
       const result = await imagesNotifications.insertOne(data);
       res.send(result);
     });
@@ -912,20 +928,109 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/notifications", async (req, res) => {
+      const data = req.body;
+
+      data.forEach((d) => {
+        const updateStatus = {
+          $set: {
+            read: "yes",
+          },
+        };
+        const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
+      });
+      res.send("Make all notifications as read");
+    });
+
     // prescription
     app.get("/prescriptions", async (req, res) => {
-      const result = await prescriptionCollection.find().toArray();
+      const result = await prescriptionCollection.find().sort({ date: -1 }).toArray();
       res.send(result);
     });
 
+    //adding prescribed items to cart
     app.post("/prescriptions", async (req, res) => {
       const data = req.body;
       let result;
-      data.map(async (singleCart) => {
+      data.cart?.map(async (singleCart) => {
         result = await mediCartCollection.insertOne(singleCart);
       });
+
+      const newStatus = {
+        $set: {
+          status: "success",
+        },
+      };
+      const options = { upsert: true };
+      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options);
+
+      const notificationData = {
+        name: "Medicines has been added to your cart",
+        read: "no",
+        email: data?.cart[0]?.email,
+        date: orderDate,
+        photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png",
+        url: "medicineCarts",
+        deliveryTime: "Now your can make the order",
+      };
+      const result3 = await imagesNotifications.insertOne(notificationData);
+
+      res.send(result2);
+    });
+
+    app.delete("/prescriptions/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await prescriptionCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
+
+    // Dashboard home 
+    app.get("/dashboard/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email })
+
+      if (user?.role === "admin") {
+        const allUsers = await userCollection.find().toArray();
+        const allMedicines = await medicineCollection.find().toArray();
+        const allLabs = await labItemsCollection.find().toArray();
+
+        const users = allUsers.length;
+        const medicines = allMedicines.length;
+        const labTests = allLabs.length;
+        const brands = 8;
+        const labs = 15;
+        let pharmacist = 0;
+        allUsers.forEach(singleUser => {
+          if (singleUser.role === "Pharmacist") {
+            pharmacist = pharmacist + 1;
+          }
+        })
+
+        const info = { users, medicines, labTests, brands, labs, pharmacist };
+
+        const newData = {
+          $set: {
+            info,
+          },
+        };
+        const result = await dashboardDataCollection.updateOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") }, newData);
+        // console.log(result)
+        res.send(result);
+        return;
+
+      }
+      res.send({ data: "no data found" })
+    })
+
+    app.get("/adminHomeData/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+
+      if (user?.role === "admin") {
+        const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
+        res.send(result);
+      }
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

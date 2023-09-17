@@ -693,7 +693,7 @@ async function run() {
           const url = "dashboard/order-history";
           const deliveryTime = "Your order is being processing";
 
-          const notificationData = { name: `New order: ${item.medicine_name}`, email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
+          const notificationData = { name: `New order: ${item.medicine_name}`, read: "no", email: item.email, date: orderDate, photoURL: item.image, url, deliveryTime, pharmacist_email: result1.pharmacist_email };
 
           const newStatus = {
             $set: {
@@ -830,6 +830,7 @@ async function run() {
             photoURL: "https://i.ibb.co/QcwbgTF/lab.png",
             url,
             deliveryTime,
+            read: "no",
           };
           const options = { upsert: true };
 
@@ -873,6 +874,7 @@ async function run() {
       const data = req.body;
 
       if (query === "prescription") {
+        data.read = "no";
         const result = await prescriptionCollection.insertOne(data);
         res.send(result);
         return;
@@ -902,6 +904,7 @@ async function run() {
 
     app.post("/notifications", async (req, res) => {
       const data = req.body;
+      data.read = "no";
       const result = await imagesNotifications.insertOne(data);
       res.send(result);
     });
@@ -912,12 +915,27 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/notifications", async (req, res) => {
+      const data = req.body;
+
+      data.forEach((d) => {
+        const updateStatus = {
+          $set: {
+            read: "yes",
+          },
+        };
+        const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
+      });
+      res.send("Make all notifications as read");
+    });
+
     // prescription
     app.get("/prescriptions", async (req, res) => {
       const result = await prescriptionCollection.find().sort({ date: -1 }).toArray();
       res.send(result);
     });
 
+    //adding prescribed items to cart
     app.post("/prescriptions", async (req, res) => {
       const data = req.body;
       let result;
@@ -935,6 +953,7 @@ async function run() {
 
       const notificationData = {
         name: "Medicines has been added to your cart",
+        read: "no",
         email: data?.cart[0]?.email,
         date: orderDate,
         photoURL: "https://i.ibb.co/7YZdDdC/ppppppp.png",

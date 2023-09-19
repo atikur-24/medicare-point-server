@@ -51,7 +51,6 @@ async function run() {
     const mediCartCollection = database.collection("medicinesCart");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const reqToStockMedicineCollection = database.collection("requestToStockMedi");
-    const reqNewMedicineCollection = database.collection("reqNewMedi");
     // lab test
     const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
@@ -69,7 +68,6 @@ async function run() {
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
     const dashboardDataCollection = database.collection("dashboardData");
-    const discountCodesCollection = database.collection("discountCodes");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -92,33 +90,38 @@ async function run() {
 
     // status approved;
     app.get("/medicines", async (req, res) => {
-      const sbn = req.query?.name;
-      const sbc = req.query?.category;
-      let query = { status: "approved" };
+      const query = { status: "approved" };
       let sortObject = {};
-      let category;
-      if (sbc) {
-        category = req?.query?.category;
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1 };
+
+      switch (req.query.sort) {
+        case "phtl":
+          sortObject = { price: 1 };
+          break;
+        case "plth":
+          sortObject = { price: -1 };
+          break;
+        case "byRating":
+          sortObject = { rating: -1 };
+          break;
+        case "fNew":
+          sortObject = { date: -1 };
+          break;
+        case "fOld":
+          sortObject = { date: 1 };
+          break;
+        default:
+          break;
       }
 
-      if (sbn) {
-        // query = { medicine_name: { $regex: sbn, $options: "i" }, category: { $regex: sbc, $options: "i" } };
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
-      }
+      // FOR FINDING DATA WITHOUT SPECIFIC FIELD
+      // const result = await medicineCollection
+      //   .find(query, { projection: { feature_with_details: 0, medicine_description: 0 } })
+      //   .sort(sortObject)
+      //   .toArray();
 
-      if (req.query.sort === "phtl") {
-        sortObject = { price: 1 };
-      } else if (req.query.sort === "plth") {
-        sortObject = { price: -1 };
-      } else if (req.query.sort === "byRating") {
-        sortObject = { rating: -1 };
-      } else if (req.query.sort === "fNew") {
-        sortObject = { date: -1 };
-      } else if (req.query.sort === "fOld") {
-        sortObject = { date: 1 };
-      }
-
-      const result = await medicineCollection.find(query, category).sort(sortObject).toArray();
+      // FOR FINDING DATA WITH SPECIFIC FIELD
+      const result = await medicineCollection.find(query, { projection: needData }).sort(sortObject).toArray();
       res.send(result);
     });
 
@@ -287,10 +290,10 @@ async function run() {
       res.send(result);
     });
 
-    // =========== Request to stock & New medicines related apis ===========
+    // =========== Request to stock medicines related apis ===========
     app.post("/requestToStock", async (req, res) => {
       const medicineRequest = req.body;
-      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id };
+      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id, user_email: medicineRequest.user_email };
       const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
       if (existRequest) {
         const updateCountDate = {
@@ -307,26 +310,6 @@ async function run() {
       }
     });
 
-    app.post("/requestNewMedicine", async (req, res) => {
-      const newMediReq = req.body;
-      const result = await reqNewMedicineCollection.insertOne(newMediReq);
-      res.send(result);
-    });
-
-    app.get("/requestToStock/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { pharmacist_email: email };
-      if (!email) {
-        res.send({ message: "No Request Medicine found Found" });
-      }
-      const result = await reqToStockMedicineCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    app.get("/requestNewMedicine", async (req, res) => {
-      const result = await reqNewMedicineCollection.find().toArray();
-      res.send(result);
-    });
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
@@ -369,12 +352,8 @@ async function run() {
     });
 
     app.get("/labPopularItems", async (req, res) => {
-      const result = await labItemsCollection
-        .find()
-        .sort({
-          totalBooked: -1,
-        })
-        .toArray();
+      const query = { category: "Popular" };
+      const result = await labItemsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -933,7 +912,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [{ email: email }, { receiver: role }, { pharmacist_email: email }],
+        $or: [{ email: email }, { receiver: role }],
       };
 
       const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
@@ -965,14 +944,6 @@ async function run() {
         const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
       });
       res.send("Make all notifications as read");
-    });
-
-    app.post("/sendNotification", async (req, res) => {
-      const data = req.body;
-      data.read = "no";
-      data.date = orderDate;
-      const result = await imagesNotifications.insertOne(data);
-      res.send(result);
     });
 
     // prescription
@@ -1061,75 +1032,6 @@ async function run() {
       if (user?.role === "admin") {
         const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
         res.send(result);
-      }
-    });
-
-    // discount codes
-    app.get("/discountCodes/:email", async (req, res) => {
-      const email = req.params.email;
-      // console.log(email)
-      const user = await userCollection.findOne({ email: email });
-
-      if (user?.role === "admin") {
-        const discountCodes = await discountCodesCollection.find().toArray();
-        res.send(discountCodes);
-        return;
-      }
-      res.send("Your are not valid user!");
-    });
-
-    app.post("/discountCodes", async (req, res) => {
-      const data = req.body;
-
-      const query = {
-        // discountName: { $regex: data.discountName, $options: "i" }
-        discountName: data.discountName,
-      };
-      const isExist = await discountCodesCollection.findOne(query);
-
-      if (isExist !== null) {
-        res.send({ message: "This discount code name already exist" });
-      } else {
-        const result = await discountCodesCollection.insertOne(data);
-        res.send(result);
-      }
-    });
-
-    app.patch("/discountCodes", async (req, res) => {
-      const data = req.body.data;
-      const id = req.body.id;
-
-      const updatedData = {
-        $set: {
-          discount: data.discount,
-          discountType: data.discountType,
-          status: data.status,
-        },
-      };
-
-      const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
-      res.send(result);
-    });
-
-    app.delete("/discountCodes/:id", async (req, res) => {
-      const id = req.params.id;
-      const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
-      res.send(result);
-      return;
-    });
-
-    // checking user's inserted discount code
-    app.post("/isValidDiscount", async (req, res) => {
-      const data = req.body;
-
-      const query = {
-        discountName: data.promoCode,
-      };
-      const isExist = await discountCodesCollection.findOne(query);
-      if (isExist !== null) {
-        res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
-      } else {
-        res.send({ message: "Discount code is invalid" });
       }
     });
 

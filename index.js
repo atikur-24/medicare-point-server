@@ -18,17 +18,17 @@ const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  maxPoolSize: 10,
-});
+const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+// const client = new MongoClient(uri, {
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   },
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+//   maxPoolSize: 10,
+// });
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -290,7 +290,7 @@ async function run() {
     // =========== Request to stock & New medicines related apis ===========
     app.post("/requestToStock", async (req, res) => {
       const medicineRequest = req.body;
-      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id, user_email: medicineRequest.user_email };
+      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id };
       const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
       if (existRequest) {
         const updateCountDate = {
@@ -315,10 +315,11 @@ async function run() {
 
     app.get("/requestToStock/:email", async (req, res) => {
       const email = req.params.email;
+      const query = { pharmacist_email: email };
       if (!email) {
         res.send({ message: "No Request Medicine found Found" });
       }
-      const result = await reqToStockMedicineCollection.find().toArray();
+      const result = await reqToStockMedicineCollection.find(query).toArray();
       res.send(result);
     });
 

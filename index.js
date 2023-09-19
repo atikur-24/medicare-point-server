@@ -1035,6 +1035,128 @@ async function run() {
       }
     });
 
+    // discount codes
+    app.get("/discountCodes/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email)
+      const user = await userCollection.findOne({ email: email });
+
+      if (user?.role === "admin") {
+        const discountCodes = await discountCodesCollection.find().toArray();
+        res.send(discountCodes);
+        return;
+      }
+      res.send("Your are not valid user!");
+    });
+
+    app.post("/discountCodes", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        // discountName: { $regex: data.discountName, $options: "i" }
+        discountName: data.discountName,
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+
+      if (isExist !== null) {
+        res.send({ message: "This discount code name already exist" });
+      } else {
+        const result = await discountCodesCollection.insertOne(data);
+        res.send(result);
+      }
+    });
+
+    app.patch("/discountCodes", async (req, res) => {
+      const data = req.body.data;
+      const id = req.body.id;
+
+      const updatedData = {
+        $set: {
+          discount: data.discount,
+          discountType: data.discountType,
+          status: data.status,
+        },
+      };
+
+      const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
+      res.send(result);
+    });
+
+    app.delete("/discountCodes/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+      return;
+    });
+
+    // checking user's inserted discount code
+    app.post("/isValidDiscount", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        discountName: data.promoCode,
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+      if (isExist !== null) {
+        res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
+      } else {
+        res.send({ message: "Discount code is invalid" });
+      }
+    });
+
+    // discount codes
+    app.get("/discountCodes/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email)
+      const user = await userCollection.findOne({ email: email });
+
+      if (user?.role === "admin") {
+        const discountCodes = await discountCodesCollection.find().toArray();
+        res.send(discountCodes);
+        return;
+      }
+      res.send("Your are not valid user!");
+    });
+
+    app.post("/discountCodes", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        discountName: { $regex: data.discountName, $options: "i" },
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+
+      if (isExist !== null) {
+        res.send({ message: "This discount code name already exist" });
+      } else {
+        const result = await discountCodesCollection.insertOne(data);
+        res.send(result);
+      }
+    });
+
+    app.patch("/discountCodes", async (req, res) => {
+      const data = req.body.data;
+      const id = req.body.id;
+
+      const updatedData = {
+        $set: {
+          discount: data.discount,
+          discountType: data.discountType,
+          status: data.status,
+        },
+      };
+
+      const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
+      res.send(result);
+    });
+
+    app.delete("/discountCodes/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+      return;
+    });
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

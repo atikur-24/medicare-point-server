@@ -1051,7 +1051,8 @@ async function run() {
       const data = req.body;
 
       const query = {
-        discountName: { $regex: data.discountName, $options: "i" }
+        // discountName: { $regex: data.discountName, $options: "i" }
+        discountName: data.discountName
       };
       const isExist = await discountCodesCollection.findOne(query);
 
@@ -1085,6 +1086,23 @@ async function run() {
       const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
       return;
+    })
+
+    // checking user's inserted discount code 
+    app.post("/isValidDiscount", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        discountName: data.promoCode
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+      if (isExist !== null) {
+        res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
+      }
+      else {
+        res.send({ message: "Discount code is invalid" })
+      }
+
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

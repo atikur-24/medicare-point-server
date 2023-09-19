@@ -368,8 +368,12 @@ async function run() {
     });
 
     app.get("/labPopularItems", async (req, res) => {
-      const query = { category: "Popular" };
-      const result = await labItemsCollection.find(query).toArray();
+      const result = await labItemsCollection
+        .find()
+        .sort({
+          totalBooked: -1,
+        })
+        .toArray();
       res.send(result);
     });
 
@@ -928,7 +932,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [{ email: email }, { receiver: role }],
+        $or: [{ email: email }, { receiver: role }, { pharmacist_email: email }],
       };
 
       const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
@@ -960,6 +964,14 @@ async function run() {
         const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
       });
       res.send("Make all notifications as read");
+    });
+
+    app.post("/sendNotification", async (req, res) => {
+      const data = req.body;
+      data.read = "no";
+      data.date = orderDate;
+      const result = await imagesNotifications.insertOne(data);
+      res.send(result);
     });
 
     // prescription
@@ -1069,7 +1081,8 @@ async function run() {
       const data = req.body;
 
       const query = {
-        discountName: { $regex: data.discountName, $options: "i" },
+        // discountName: { $regex: data.discountName, $options: "i" }
+        discountName: data.discountName,
       };
       const isExist = await discountCodesCollection.findOne(query);
 
@@ -1102,6 +1115,21 @@ async function run() {
       const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
       return;
+    });
+
+    // checking user's inserted discount code
+    app.post("/isValidDiscount", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        discountName: data.promoCode,
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+      if (isExist !== null) {
+        res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
+      } else {
+        res.send({ message: "Discount code is invalid" });
+      }
     });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

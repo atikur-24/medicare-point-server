@@ -18,17 +18,17 @@ const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  maxPoolSize: 10,
-});
+const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+// const client = new MongoClient(uri, {
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   },
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+//   maxPoolSize: 10,
+// });
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -51,6 +51,7 @@ async function run() {
     const mediCartCollection = database.collection("medicinesCart");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const reqToStockMedicineCollection = database.collection("requestToStockMedi");
+    const reqNewMedicineCollection = database.collection("reqNewMedi");
     // lab test
     const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
@@ -286,10 +287,10 @@ async function run() {
       res.send(result);
     });
 
-    // =========== Request to stock medicines related apis ===========
+    // =========== Request to stock & New medicines related apis ===========
     app.post("/requestToStock", async (req, res) => {
       const medicineRequest = req.body;
-      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id, user_email: medicineRequest.user_email };
+      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id };
       const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
       if (existRequest) {
         const updateCountDate = {
@@ -306,6 +307,26 @@ async function run() {
       }
     });
 
+    app.post("/requestNewMedicine", async (req, res) => {
+      const newMediReq = req.body;
+      const result = await reqNewMedicineCollection.insertOne(newMediReq);
+      res.send(result);
+    });
+
+    app.get("/requestToStock/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { pharmacist_email: email };
+      if (!email) {
+        res.send({ message: "No Request Medicine found Found" });
+      }
+      const result = await reqToStockMedicineCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/requestNewMedicine", async (req, res) => {
+      const result = await reqNewMedicineCollection.find().toArray();
+      res.send(result);
+    });
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
@@ -952,7 +973,7 @@ async function run() {
       data.date = orderDate;
       const result = await imagesNotifications.insertOne(data);
       res.send(result);
-    })
+    });
 
     // prescription
     app.get("/prescriptions", async (req, res) => {
@@ -1062,7 +1083,7 @@ async function run() {
 
       const query = {
         // discountName: { $regex: data.discountName, $options: "i" }
-        discountName: data.discountName
+        discountName: data.discountName,
       };
       const isExist = await discountCodesCollection.findOne(query);
 
@@ -1097,22 +1118,20 @@ async function run() {
       return;
     });
 
-    // checking user's inserted discount code 
+    // checking user's inserted discount code
     app.post("/isValidDiscount", async (req, res) => {
       const data = req.body;
 
       const query = {
-        discountName: data.promoCode
+        discountName: data.promoCode,
       };
       const isExist = await discountCodesCollection.findOne(query);
       if (isExist !== null) {
         res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
+      } else {
+        res.send({ message: "Discount code is invalid" });
       }
-      else {
-        res.send({ message: "Discount code is invalid" })
-      }
-
-    })
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

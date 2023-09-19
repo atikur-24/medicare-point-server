@@ -909,7 +909,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [{ email: email }, { receiver: role }],
+        $or: [{ email: email }, { receiver: role }, { pharmacist_email: email }],
       };
 
       const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
@@ -942,6 +942,14 @@ async function run() {
       });
       res.send("Make all notifications as read");
     });
+
+    app.post("/sendNotification", async (req, res) => {
+      const data = req.body;
+      data.read = "no";
+      data.date = orderDate;
+      const result = await imagesNotifications.insertOne(data);
+      res.send(result);
+    })
 
     // prescription
     app.get("/prescriptions", async (req, res) => {

@@ -348,8 +348,12 @@ async function run() {
     });
 
     app.get("/labPopularItems", async (req, res) => {
-      const query = { category: "Popular" };
-      const result = await labItemsCollection.find(query).toArray();
+      const result = await labItemsCollection
+        .find()
+        .sort({
+          totalBooked: -1,
+        })
+        .toArray();
       res.send(result);
     });
 
@@ -375,7 +379,6 @@ async function run() {
       // const id = req.params.id;
       const { data, _id } = req.body;
       delete data._id;
-
 
       // const { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city } = body;
 
@@ -985,10 +988,10 @@ async function run() {
       res.send(result);
     });
 
-    // Dashboard home 
+    // Dashboard home
     app.get("/dashboard/:email", async (req, res) => {
       const email = req.params.email;
-      const user = await userCollection.findOne({ email: email })
+      const user = await userCollection.findOne({ email: email });
 
       if (user?.role === "admin") {
         const allUsers = await userCollection.find().toArray();
@@ -1001,11 +1004,11 @@ async function run() {
         const brands = 8;
         const labs = 15;
         let pharmacist = 0;
-        allUsers.forEach(singleUser => {
+        allUsers.forEach((singleUser) => {
           if (singleUser.role === "Pharmacist") {
             pharmacist = pharmacist + 1;
           }
-        })
+        });
 
         const info = { users, medicines, labTests, brands, labs, pharmacist };
 
@@ -1018,10 +1021,9 @@ async function run() {
         // console.log(result)
         res.send(result);
         return;
-
       }
-      res.send({ data: "no data found" })
-    })
+      res.send({ data: "no data found" });
+    });
 
     app.get("/adminHomeData/:email", async (req, res) => {
       const email = req.params.email;
@@ -1031,13 +1033,13 @@ async function run() {
         const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
         res.send(result);
       }
-    })
+    });
 
-    // discount codes 
+    // discount codes
     app.get("/discountCodes/:email", async (req, res) => {
       const email = req.params.email;
       // console.log(email)
-      const user = await userCollection.findOne({ email: email })
+      const user = await userCollection.findOne({ email: email });
 
       if (user?.role === "admin") {
         const discountCodes = await discountCodesCollection.find().toArray();
@@ -1045,24 +1047,23 @@ async function run() {
         return;
       }
       res.send("Your are not valid user!");
-    })
+    });
 
     app.post("/discountCodes", async (req, res) => {
       const data = req.body;
 
       const query = {
-        discountName: { $regex: data.discountName, $options: "i" }
+        discountName: { $regex: data.discountName, $options: "i" },
       };
       const isExist = await discountCodesCollection.findOne(query);
 
       if (isExist !== null) {
-        res.send({ message: "This discount code name already exist" })
+        res.send({ message: "This discount code name already exist" });
       } else {
         const result = await discountCodesCollection.insertOne(data);
         res.send(result);
       }
-
-    })
+    });
 
     app.patch("/discountCodes", async (req, res) => {
       const data = req.body.data;
@@ -1072,20 +1073,20 @@ async function run() {
         $set: {
           discount: data.discount,
           discountType: data.discountType,
-          status: data.status
-        }
-      }
+          status: data.status,
+        },
+      };
 
       const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
       res.send(result);
-    })
+    });
 
     app.delete("/discountCodes/:id", async (req, res) => {
       const id = req.params.id;
       const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
       return;
-    })
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

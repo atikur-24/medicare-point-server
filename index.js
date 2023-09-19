@@ -18,17 +18,17 @@ const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   },
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-//   maxPoolSize: 10,
-// });
+// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+});
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -68,6 +68,7 @@ async function run() {
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
     const dashboardDataCollection = database.collection("dashboardData");
+    const discountCodesCollection = database.collection("discountCodes");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -352,8 +353,12 @@ async function run() {
     });
 
     app.get("/labPopularItems", async (req, res) => {
-      const query = { category: "Popular" };
-      const result = await labItemsCollection.find(query).toArray();
+      const result = await labItemsCollection
+        .find()
+        .sort({
+          totalBooked: -1,
+        })
+        .toArray();
       res.send(result);
     });
 
@@ -912,7 +917,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [{ email: email }, { receiver: role }],
+        $or: [{ email: email }, { receiver: role }, { pharmacist_email: email }],
       };
 
       const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
@@ -944,6 +949,14 @@ async function run() {
         const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
       });
       res.send("Make all notifications as read");
+    });
+
+    app.post("/sendNotification", async (req, res) => {
+      const data = req.body;
+      data.read = "no";
+      data.date = orderDate;
+      const result = await imagesNotifications.insertOne(data);
+      res.send(result);
     });
 
     // prescription
@@ -1032,6 +1045,75 @@ async function run() {
       if (user?.role === "admin") {
         const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
         res.send(result);
+      }
+    });
+
+    // discount codes
+    app.get("/discountCodes/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email)
+      const user = await userCollection.findOne({ email: email });
+
+      if (user?.role === "admin") {
+        const discountCodes = await discountCodesCollection.find().toArray();
+        res.send(discountCodes);
+        return;
+      }
+      res.send("Your are not valid user!");
+    });
+
+    app.post("/discountCodes", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        // discountName: { $regex: data.discountName, $options: "i" }
+        discountName: data.discountName,
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+
+      if (isExist !== null) {
+        res.send({ message: "This discount code name already exist" });
+      } else {
+        const result = await discountCodesCollection.insertOne(data);
+        res.send(result);
+      }
+    });
+
+    app.patch("/discountCodes", async (req, res) => {
+      const data = req.body.data;
+      const id = req.body.id;
+
+      const updatedData = {
+        $set: {
+          discount: data.discount,
+          discountType: data.discountType,
+          status: data.status,
+        },
+      };
+
+      const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
+      res.send(result);
+    });
+
+    app.delete("/discountCodes/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+      return;
+    });
+
+    // checking user's inserted discount code
+    app.post("/isValidDiscount", async (req, res) => {
+      const data = req.body;
+
+      const query = {
+        discountName: data.promoCode,
+      };
+      const isExist = await discountCodesCollection.findOne(query);
+      if (isExist !== null) {
+        res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
+      } else {
+        res.send({ message: "Discount code is invalid" });
       }
     });
 

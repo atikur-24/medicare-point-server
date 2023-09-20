@@ -153,14 +153,13 @@ async function run() {
     });
 
     app.get("/medicinesc", async (req, res) => {
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
       const category = req.query.category;
-      const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
-      res.send(result);
-    });
-
-    app.get("/medicinesc", async (req, res) => {
-      const category = req.query.category;
-      const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
+      const query = {
+        "category.value": category,
+        status: "approved",
+      };
+      const result = await medicineCollection.find(query, { projection: needData }).toArray();
       res.send(result);
     });
 

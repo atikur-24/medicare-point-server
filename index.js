@@ -18,17 +18,17 @@ const dateAndTime = moment().format("MMMM Do YYYY, h:mm:ss a");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@team-gladiators.2x9sw5e.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   },
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-//   maxPoolSize: 10,
-// });
+// const client = new MongoClient(uri, { useUnifiedTopology: true }, { useNewUrlParser: true }, { connectTimeoutMS: 30000 }, { keepAlive: 1 });
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+});
 
 // ssl config
 const store_id = process.env.PAYMENT_STORE_ID;
@@ -51,6 +51,7 @@ async function run() {
     const mediCartCollection = database.collection("medicinesCart");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
     const reqToStockMedicineCollection = database.collection("requestToStockMedi");
+    const reqNewMedicineCollection = database.collection("reqNewMedi");
     // lab test
     const labCategoryCollection = database.collection("labCategories");
     const labItemsCollection = database.collection("labItems");
@@ -68,23 +69,25 @@ async function run() {
     const imagesNotifications = database.collection("notifications");
     const prescriptionCollection = database.collection("prescription");
     const dashboardDataCollection = database.collection("dashboardData");
+    const discountCodesCollection = database.collection("discountCodes");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
-      const result = await medicineCollection.find().toArray();
+      const needData = { _id: 1, medicine_name: 1, image: 1, available_quantity: 1, sellQuantity: 1, pharmacist_name: 1, pharmacist_email: 1, status: 1 };
+      const result = await medicineCollection.find({}, { projection: needData }).toArray();
       res.send(result);
     });
 
     // home page search medicines
-    // home page search medicines
     app.get("/searchMedicinesByName", async (req, res) => {
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1 };
       const sbn = req.query?.name;
-      let query = {};
+      let query = { status: "approved" };
 
       if (sbn) {
-        query = { medicine_name: { $regex: sbn, $options: "i" }, status: "approved" };
+        query = { ...query, medicine_name: { $regex: sbn, $options: "i" } };
       }
-      const result = await medicineCollection.find(query).toArray();
+      const result = await medicineCollection.find(query, { projection: needData }).toArray();
       res.send(result);
     });
 
@@ -92,7 +95,7 @@ async function run() {
     app.get("/medicines", async (req, res) => {
       const query = { status: "approved" };
       let sortObject = {};
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1 };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1 };
 
       switch (req.query.sort) {
         case "phtl":
@@ -114,7 +117,7 @@ async function run() {
           break;
       }
 
-      // FOR FINDING DATA WITHOUT SPECIFIC FIELD
+      // FOR FINDING DATA WITHOUT SPECIFIC FIELD (IMPORTANT)
       // const result = await medicineCollection
       //   .find(query, { projection: { feature_with_details: 0, medicine_description: 0 } })
       //   .sort(sortObject)
@@ -138,13 +141,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/phamacistMedicines", async (req, res) => {
+    app.get("/pharmacistMedicines", async (req, res) => {
+      const needData = { _id: 1, medicine_name: 1, image: 1, available_quantity: 1, sellQuantity: 1, status: 1 };
       const email = req.query.email;
       if (!email) {
         res.send([]);
       }
       const query = { pharmacist_email: email };
-      const result = await medicineCollection.find(query).toArray();
+      const result = await medicineCollection.find(query, { projection: needData }).toArray();
       res.send(result);
     });
 
@@ -290,10 +294,21 @@ async function run() {
       res.send(result);
     });
 
-    // =========== Request to stock medicines related apis ===========
+    // =========== Request to stock & request new medicines related apis ===========
+    // request to stock
+    app.get("/requestToStock/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { pharmacist_email: email };
+      if (!email) {
+        res.send({ message: "No Request Medicine found Found" });
+      }
+      const result = await reqToStockMedicineCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/requestToStock", async (req, res) => {
       const medicineRequest = req.body;
-      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id, user_email: medicineRequest.user_email };
+      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id };
       const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
       if (existRequest) {
         const updateCountDate = {
@@ -308,6 +323,32 @@ async function run() {
         const result = await reqToStockMedicineCollection.insertOne(medicineRequest);
         res.send(result);
       }
+    });
+
+    app.delete("/requestToStock/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reqToStockMedicineCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // request for new medicine
+    app.get("/requestNewMedicine", async (req, res) => {
+      const result = await reqNewMedicineCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/requestNewMedicine", async (req, res) => {
+      const newMediReq = req.body;
+      const result = await reqNewMedicineCollection.insertOne(newMediReq);
+      res.send(result);
+    });
+
+    app.delete("/requestNewMedicine/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reqNewMedicineCollection.deleteOne(query);
+      res.send(result);
     });
 
     // =========== Lab Test related apis ===========
@@ -341,7 +382,10 @@ async function run() {
         query = { test_name: { $regex: sbn, $options: "i" } };
       }
 
-      const result = await labItemsCollection.find(query).sort({ report: 1 }).toArray();
+      const result = await labItemsCollection
+        .find(query, { projection: { labTestDetails: 0 } })
+        .sort({ report: 1 })
+        .toArray();
       res.send(result);
     });
 
@@ -352,8 +396,12 @@ async function run() {
     });
 
     app.get("/labPopularItems", async (req, res) => {
-      const query = { category: "Popular" };
-      const result = await labItemsCollection.find(query).toArray();
+      const result = await labItemsCollection
+        .find({}, { projection: { labTestDetails: 0 } })
+        .sort({
+          totalBooked: -1,
+        })
+        .toArray();
       res.send(result);
     });
 
@@ -417,7 +465,8 @@ async function run() {
 
     // =========== Health Tips Related apis ===========
     app.get("/allHealthTips", async (req, res) => {
-      const result = await healthTipsCollection.find().toArray();
+      const unnecessaryData = { prevention: 0, cure: 0, doctorDepartment: 0, date: 0, doctorName: 0 };
+      const result = await healthTipsCollection.find({}, { projection: unnecessaryData }).toArray();
       res.send(result);
     });
 
@@ -457,7 +506,8 @@ async function run() {
 
     // =========== Blog Related apis ===========
     app.get("/blogs", async (req, res) => {
-      const result = await blogCollection.find().toArray();
+      const unnecessaryData = { content_details: 0, author: 0 };
+      const result = await blogCollection.find({}, { projection: unnecessaryData }).toArray();
       res.send(result);
     });
 
@@ -912,7 +962,7 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [{ email: email }, { receiver: role }],
+        $or: [{ email: email }, { receiver: role }, { pharmacist_email: email }],
       };
 
       const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
@@ -944,6 +994,14 @@ async function run() {
         const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
       });
       res.send("Make all notifications as read");
+    });
+
+    app.post("/sendNotification", async (req, res) => {
+      const data = req.body;
+      data.read = "no";
+      data.date = orderDate;
+      const result = await imagesNotifications.insertOne(data);
+      res.send(result);
     });
 
     // prescription
@@ -1102,59 +1160,6 @@ async function run() {
       } else {
         res.send({ message: "Discount code is invalid" });
       }
-    });
-
-    // discount codes
-    app.get("/discountCodes/:email", async (req, res) => {
-      const email = req.params.email;
-      // console.log(email)
-      const user = await userCollection.findOne({ email: email });
-
-      if (user?.role === "admin") {
-        const discountCodes = await discountCodesCollection.find().toArray();
-        res.send(discountCodes);
-        return;
-      }
-      res.send("Your are not valid user!");
-    });
-
-    app.post("/discountCodes", async (req, res) => {
-      const data = req.body;
-
-      const query = {
-        discountName: { $regex: data.discountName, $options: "i" },
-      };
-      const isExist = await discountCodesCollection.findOne(query);
-
-      if (isExist !== null) {
-        res.send({ message: "This discount code name already exist" });
-      } else {
-        const result = await discountCodesCollection.insertOne(data);
-        res.send(result);
-      }
-    });
-
-    app.patch("/discountCodes", async (req, res) => {
-      const data = req.body.data;
-      const id = req.body.id;
-
-      const updatedData = {
-        $set: {
-          discount: data.discount,
-          discountType: data.discountType,
-          status: data.status,
-        },
-      };
-
-      const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
-      res.send(result);
-    });
-
-    app.delete("/discountCodes/:id", async (req, res) => {
-      const id = req.params.id;
-      const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
-      res.send(result);
-      return;
     });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

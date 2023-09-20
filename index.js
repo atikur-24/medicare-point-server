@@ -95,7 +95,7 @@ async function run() {
     app.get("/medicines", async (req, res) => {
       const query = { status: "approved" };
       let sortObject = {};
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1 };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
 
       switch (req.query.sort) {
         case "phtl":
@@ -125,6 +125,36 @@ async function run() {
 
       // FOR FINDING DATA WITH SPECIFIC FIELD
       const result = await medicineCollection.find(query, { projection: needData }).sort(sortObject).toArray();
+      res.send(result);
+    });
+
+    // highest selling medicines
+    app.get("/highestSelling-medicines", async (req, res) => {
+      const query = { status: "approved" };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
+      const sorting = {
+        sort: { sellQuantity: -1 },
+        limit: 10,
+      };
+      const result = await medicineCollection.find(query, { projection: needData, ...sorting }).toArray();
+      res.send(result);
+    });
+
+    // top rated medicines
+    app.get("/topRated-medicines", async (req, res) => {
+      const query = { status: "approved" };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, rating: 1 };
+      const sorting = {
+        sort: { rating: -1 },
+        limit: 5,
+      };
+      const result = await medicineCollection.find(query, { projection: needData, ...sorting }).toArray();
+      res.send(result);
+    });
+
+    app.get("/medicinesc", async (req, res) => {
+      const category = req.query.category;
+      const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
       res.send(result);
     });
 
@@ -708,12 +738,19 @@ async function run() {
         ship_country: "Bangladesh",
       };
 
+      const currentDate = moment();
+      // Add 1-3 days to the current date
+      const oneDaysAhead = currentDate.add(1, "days").format("DD MMM");
+      const threeDaysAhead = currentDate.add(3, "days").format("DD MMM YYYY");
+
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
       sslcz.init(data).then((apiResponse) => {
         const a = cart.map(async (cp) => {
           const { _id, medicine_Id, medicine_name, price, quantity, discount, email, category, image } = cp;
           const singleProduct = {
+            dateAndTime,
+            expectedDate: [oneDaysAhead, threeDaysAhead],
             dateAndTime,
             transId,
             cartId: _id,

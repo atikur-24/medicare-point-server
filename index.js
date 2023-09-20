@@ -386,6 +386,11 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/adminLabBooking", async (req, res) => {
+      const result = await bookedLabTestCollection.find().toArray();
+      res.send(result)
+    })
+
     app.get("/labBooking", async (req, res) => {
       const email = req.query.email;
       if (!email) {

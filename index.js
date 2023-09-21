@@ -70,6 +70,7 @@ async function run() {
     const prescriptionCollection = database.collection("prescription");
     const dashboardDataCollection = database.collection("dashboardData");
     const discountCodesCollection = database.collection("discountCodes");
+    const feedbackCollection = database.collection("feedback");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -388,8 +389,8 @@ async function run() {
 
     app.get("/adminLabBooking", async (req, res) => {
       const result = await bookedLabTestCollection.find().toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     app.get("/labBooking", async (req, res) => {
       const email = req.query.email;
@@ -700,6 +701,17 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // =========== Feedback apis ===========
+    app.get("/feedback", async (req, res) => {
+      const result = await feedbackCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/feedback", async (req, res) => {
+      const feedback = req.body;
+      const result = await feedbackCollection.insertOne(feedback);
       res.send(result);
     });
 

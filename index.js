@@ -359,6 +359,12 @@ async function run() {
       res.send(result);
     });
 
+    // all medicine for admin
+    app.get("/medicinesOrderByAdmin", async (req, res) => {
+      const result = await orderedMedicinesCollection.find().toArray();
+      res.send(result);
+    });
+
     // =========== Request to stock & request new medicines related apis ===========
     // request to stock
     app.get("/requestToStock/:email", async (req, res) => {

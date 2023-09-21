@@ -835,6 +835,16 @@ async function run() {
           const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
         }
 
+        if (discountCode === "REWARD50") {
+
+          const updateInfo = {
+            $set: {
+              rewardToDiscount: ""
+            },
+          };
+          const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
         // return;
 
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
@@ -893,6 +903,8 @@ async function run() {
       });
     });
 
+
+    // Lab payment api 
     app.post("/labPayment", async (req, res) => {
       const paymentData = req.body;
       const cart = paymentData.cart;
@@ -1166,50 +1178,50 @@ async function run() {
     });
 
     // Dashboard home
-    app.get("/dashboard/:email", async (req, res) => {
+    app.get("/dashboardHomeData/:email", async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
 
       if (user?.role === "admin") {
-        const allUsers = await userCollection.find().toArray();
-        const allMedicines = await medicineCollection.find().toArray();
-        const allLabs = await labItemsCollection.find().toArray();
+        const allUsers = await userCollection.find({ role: "user" }, { projection: { role: 1 } }).toArray();
+        const allPharmacists = await userCollection.find({ role: "Pharmacist" }, { projection: { role: 1 } }).toArray();
+        const allAdmin = await userCollection.find({ role: "admin" }, { projection: { role: 1 } }).toArray();
+        const allMedicines = await medicineCollection.find({ status: "approved" }, { projection: { status: 1 } }).toArray();
+        const allLabs = await labItemsCollection.find({}, { projection: { test_name: 1 } }).toArray();
 
         const users = allUsers.length;
+        const pharmacist = allPharmacists.length;
+        const admin = allAdmin.length;
         const medicines = allMedicines.length;
         const labTests = allLabs.length;
         const brands = 8;
         const labs = 15;
-        let pharmacist = 0;
-        allUsers.forEach((singleUser) => {
-          if (singleUser.role === "Pharmacist") {
-            pharmacist = pharmacist + 1;
-          }
-        });
 
-        const info = { users, medicines, labTests, brands, labs, pharmacist };
-
-        const newData = {
-          $set: {
-            info,
-          },
-        };
-        const result = await dashboardDataCollection.updateOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") }, newData);
-        // console.log(result)
-        res.send(result);
+        const info = { users, pharmacist, admin, medicines, labTests, brands, labs };
+        res.send(info);
         return;
       }
-      res.send({ data: "no data found" });
-    });
 
-    app.get("/adminHomeData/:email", async (req, res) => {
-      const email = req.params.email;
-      const user = await userCollection.findOne({ email: email });
+      if (user?.role === "Pharmacist") {
+        const allMedicines = await medicineCollection.find({ status: "approved" }, { projection: { status: 1 } }).toArray();
+        const allOrders = await orderedMedicinesCollection.find({ status: "success" }, { projection: { status: 1 } }).toArray();
+        const allPendingOrders = await orderedMedicinesCollection.find({ status: "success", delivery_status: "pending" }, { projection: { delivery_status: 1 } }).toArray();
+        const allSuccessOrders = await orderedMedicinesCollection.find({ status: "success", delivery_status: "success" }, { projection: { delivery_status: 1 } }).toArray();
+        const allMedicineRequest = await reqNewMedicineCollection.find({ status: "requesting" }, { projection: { status: 1 } }).toArray();
 
-      if (user?.role === "admin") {
-        const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
-        res.send(result);
+        const medicines = allMedicines.length || 10;
+        const orders = allOrders.length || 10;
+        const pendingOrders = allPendingOrders.length || 5;
+        const successOrder = allSuccessOrders.length || 5;
+        const medicineRequest = allMedicineRequest.length || 10;
+
+        const info = { medicines, orders, pendingOrders, successOrder, medicineRequest };
+        res.send(info);
+        return;
+
       }
+
+      res.send({ data: "Unauthorized request!" });
     });
 
     // discount codes
@@ -1280,6 +1292,13 @@ async function run() {
         }
       }
 
+      if (promo === "REWARD50") {
+        const user = await userCollection.findOne({ email }, { projection: { rewardToDiscount: 1 } });
+        if (user?.rewardToDiscount !== "REWARD50") {
+          return res.send({ message: "This discount code is not for your!" });
+        }
+      }
+
       const query = {
         discountName: promo,
       };
@@ -1290,6 +1309,24 @@ async function run() {
         res.send({ message: "Discount code is invalid" });
       }
     });
+
+    // Reward points to discount code converter 
+    app.post("/rewardToDiscount", async (req, res) => {
+      const email = req.body?.email;
+      const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
+
+      const newReward = parseFloat(userInfo?.rewardPoints) - 5000;
+
+      const updateInfo = {
+        $set: {
+          rewardToDiscount: "REWARD50",
+          rewardPoints: parseFloat(newReward)
+        },
+      }
+      const discountCodeCreated = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+      res.send(discountCodeCreated);
+
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

@@ -70,6 +70,7 @@ async function run() {
     const prescriptionCollection = database.collection("prescription");
     const dashboardDataCollection = database.collection("dashboardData");
     const discountCodesCollection = database.collection("discountCodes");
+    const feedbackCollection = database.collection("feedback");
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
@@ -95,7 +96,7 @@ async function run() {
     app.get("/medicines", async (req, res) => {
       const query = { status: "approved" };
       let sortObject = {};
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1 };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
 
       switch (req.query.sort) {
         case "phtl":
@@ -128,9 +129,38 @@ async function run() {
       res.send(result);
     });
 
+    // highest selling medicines
+    app.get("/highestSelling-medicines", async (req, res) => {
+      const query = { status: "approved" };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
+      const sorting = {
+        sort: { sellQuantity: -1 },
+        limit: 10,
+      };
+      const result = await medicineCollection.find(query, { projection: needData, ...sorting }).toArray();
+      res.send(result);
+    });
+
+    // top rated medicines
+    app.get("/topRated-medicines", async (req, res) => {
+      const query = { status: "approved" };
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, rating: 1 };
+      const sorting = {
+        sort: { rating: -1 },
+        limit: 5,
+      };
+      const result = await medicineCollection.find(query, { projection: needData, ...sorting }).toArray();
+      res.send(result);
+    });
+
     app.get("/medicinesc", async (req, res) => {
+      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
       const category = req.query.category;
-      const result = await medicineCollection.find({ "category.value": category, status: "approved" }).toArray();
+      const query = {
+        "category.value": category,
+        status: "approved",
+      };
+      const result = await medicineCollection.find(query, { projection: needData }).toArray();
       res.send(result);
     });
 
@@ -354,6 +384,11 @@ async function run() {
     // =========== Lab Test related apis ===========
     app.get("/labCategories", async (req, res) => {
       const result = await labCategoryCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/adminLabBooking", async (req, res) => {
+      const result = await bookedLabTestCollection.find().toArray();
       res.send(result);
     });
 
@@ -671,6 +706,17 @@ async function run() {
       res.send(result);
     });
 
+    // =========== Feedback apis ===========
+    app.get("/feedback", async (req, res) => {
+      const result = await feedbackCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/feedback", async (req, res) => {
+      const feedback = req.body;
+      const result = await feedbackCollection.insertOne(feedback);
+      res.send(result);
+    });
+
     // =========== Payment getwey ===========
     app.post("/payment", async (req, res) => {
       const paymentData = req.body;
@@ -713,12 +759,19 @@ async function run() {
         ship_country: "Bangladesh",
       };
 
+      const currentDate = moment();
+      // Add 1-3 days to the current date
+      const oneDaysAhead = currentDate.add(1, "days").format("DD MMM");
+      const threeDaysAhead = currentDate.add(3, "days").format("DD MMM YYYY");
+
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
       sslcz.init(data).then((apiResponse) => {
         const a = cart.map(async (cp) => {
           const { _id, medicine_Id, medicine_name, price, quantity, discount, email, category, image } = cp;
           const singleProduct = {
+            dateAndTime,
+            expectedDate: [oneDaysAhead, threeDaysAhead],
             dateAndTime,
             transId,
             cartId: _id,

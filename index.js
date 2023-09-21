@@ -314,12 +314,62 @@ async function run() {
     });
 
     // =========== Medicine Order related apis ===========
+    // for customer order history
     app.get("/medicinesOrder", async (req, res) => {
       const email = req.query.email;
       if (!email) {
         res.send({ message: "Email Not Found" });
       }
       const query = { email: email };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // medicine ordered apis for pharmacist dashboard (pharmacist)
+    app.get("/medicinesOrderByPharmacistWithResponse", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { pharmacist_email: email, status: "success", pharmacist_response: false };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for all medicine  order history (pharmacist)
+    app.get("/medicinesOrderByPharmacist", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { pharmacist_email: email, status: "success" };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // order conformation (pharmacist)
+    app.patch("/pharmacistResponse", async (req, res) => {
+      const id = req.body.id;
+      const updateResponse = {
+        $set: {
+          pharmacist_response: true,
+          delivery_status: "packing",
+        },
+      };
+      const result = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(id) }, updateResponse);
+      res.send(result);
+    });
+
+    // all medicine for admin
+    app.get("/medicinesOrderByAdmin", async (req, res) => {
+      const result = await orderedMedicinesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // medicine details for admin
+    app.get("/medicinesOrderByAdmin/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await orderedMedicinesCollection.find(query).toArray();
       res.send(result);
     });
@@ -777,6 +827,8 @@ async function run() {
             cartId: _id,
             medicine_Id,
             status: "pending",
+            delivery_status: "pending",
+            pharmacist_response: false,
             medicine_name,
             price,
             quantity,
@@ -805,31 +857,29 @@ async function run() {
         const points = req.query.points;
 
         const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1, promoCodes: 1 } });
-        console.log(userInfo)
+        console.log(userInfo);
 
         if (!userInfo?.rewardPoints) {
           const updateInfo = {
             $set: {
-              rewardPoints: parseFloat(points).toFixed(2)
+              rewardPoints: parseFloat(points).toFixed(2),
             },
-          }
+          };
           const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
-        }
-        else {
+        } else {
           const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
           const updateInfo = {
             $set: {
-              rewardPoints: newPoint
+              rewardPoints: newPoint,
             },
-          }
+          };
           const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
         }
 
         if (!userInfo?.promoCodes && discountCode === "WELCOME50") {
-
           const updateInfo = {
             $set: {
-              promoCodes: [discountCode]
+              promoCodes: [discountCode],
             },
           };
           const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
@@ -986,18 +1036,17 @@ async function run() {
         if (!userInfo?.rewardPoints) {
           const updateInfo = {
             $set: {
-              rewardPoints: parseFloat(points).toFixed(2)
+              rewardPoints: parseFloat(points).toFixed(2),
             },
-          }
+          };
           const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
-        }
-        else {
+        } else {
           const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
           const updateInfo = {
             $set: {
-              rewardPoints: newPoint
+              rewardPoints: newPoint,
             },
-          }
+          };
           const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
         }
 

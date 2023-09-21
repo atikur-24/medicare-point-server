@@ -368,6 +368,8 @@ async function run() {
 
     // medicine details for admin
     app.get("/medicinesOrderByAdmin/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await orderedMedicinesCollection.find().toArray();
       res.send(result);
     });

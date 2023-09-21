@@ -447,8 +447,10 @@ async function run() {
 
     app.get("/labAllItems/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
-      res.send(result);
+      if (id) {
+        const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
+        res.send(result);
+      }
     });
 
     app.get("/labPopularItems", async (req, res) => {
@@ -740,15 +742,18 @@ async function run() {
     app.post("/payment", async (req, res) => {
       const paymentData = req.body;
       const cart = paymentData.cart;
+      const discountCode = paymentData?.discountCode;
       const transId = new ObjectId().toString();
 
       const { name, email, division, district, location, number, totalPayment } = paymentData.paymentDetails;
+
+      const points = ((10 * totalPayment) / 100).toFixed(2);
 
       const data = {
         total_amount: totalPayment,
         currency: "BDT",
         tran_id: transId, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${transId}`,
+        success_url: `http://localhost:5000/payment/success/${transId}?discountCode=${discountCode}&email=${email}&points=${points}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
         cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
@@ -816,6 +821,43 @@ async function run() {
 
       app.post("/payment/success/:id", async (req, res) => {
         const transId = req.params.id;
+        const discountCode = req.query.discountCode;
+        const email = req.query.email;
+        const points = req.query.points;
+
+        const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1, promoCodes: 1 } });
+        console.log(userInfo)
+
+        if (!userInfo?.rewardPoints) {
+          const updateInfo = {
+            $set: {
+              rewardPoints: parseFloat(points).toFixed(2)
+            },
+          }
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+        else {
+          const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
+          const updateInfo = {
+            $set: {
+              rewardPoints: newPoint
+            },
+          }
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
+        if (!userInfo?.promoCodes && discountCode === "WELCOME50") {
+
+          const updateInfo = {
+            $set: {
+              promoCodes: [discountCode]
+            },
+          };
+          const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
+        // return;
+
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
         orderedItems.forEach(async (item) => {
@@ -884,11 +926,13 @@ async function run() {
         totalPayment += singleItem.remaining;
       });
 
+      const points = ((5 * totalPayment) / 100).toFixed(2);
+
       const data = {
         total_amount: totalPayment,
         currency: "BDT",
         tran_id: transId, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${transId}`,
+        success_url: `http://localhost:5000/payment/success/${transId}?email=${email}&points=${points}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
         cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
@@ -926,7 +970,7 @@ async function run() {
           const singleProduct = {
             transId,
             cartId: cartId,
-            status: "pending",
+            status: "initiate",
             ...cp,
             ...paymentData.personalInfo,
           };
@@ -944,6 +988,28 @@ async function run() {
         const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
+        const email = req.query.email;
+        const points = req.query.points;
+        const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
+
+        if (!userInfo?.rewardPoints) {
+          const updateInfo = {
+            $set: {
+              rewardPoints: parseFloat(points).toFixed(2)
+            },
+          }
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+        else {
+          const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
+          const updateInfo = {
+            $set: {
+              rewardPoints: newPoint
+            },
+          }
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
         const url = "dashboard/booked-lab-tests";
         const deliveryTime = "We will collect sample at your chosen time";
 
@@ -953,7 +1019,7 @@ async function run() {
 
           const newStatus = {
             $set: {
-              status: "success",
+              status: "pending",
             },
           };
           // const testName = orderedItems.test_name
@@ -1224,12 +1290,22 @@ async function run() {
     // checking user's inserted discount code
     app.post("/isValidDiscount", async (req, res) => {
       const data = req.body;
+      const promo = data.promoCode;
+      const email = data.email;
+
+      if (promo === "WELCOME50") {
+        const user = await userCollection.findOne({ email }, { projection: { promoCodes: 1 } });
+        const promoCodes = user?.promoCodes?.includes("WELCOME50");
+        if (promoCodes) {
+          return res.send({ message: "This discount code has been used!" });
+        }
+      }
 
       const query = {
-        discountName: data.promoCode,
+        discountName: promo,
       };
       const isExist = await discountCodesCollection.findOne(query);
-      if (isExist !== null) {
+      if (isExist !== null && isExist.status === "Active") {
         res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
       } else {
         res.send({ message: "Discount code is invalid" });

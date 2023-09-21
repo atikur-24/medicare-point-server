@@ -324,6 +324,27 @@ async function run() {
       res.send(result);
     });
 
+    // medicine ordered apis for pharmacist dashboard
+    app.get("/medicinesOrderByPharmacist", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { pharmacist_email: email, status: "success" };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // app.get("/medicinesOrderByPharmacist/", async (req, res) => {
+    //   const email = req.query.email;
+    //   if (!email) {
+    //     res.send({ message: "Email Not Found" });
+    //   }
+    //   const query = { pharmacist_email: email, status: "success" };
+    //   const result = await orderedMedicinesCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+
     // =========== Request to stock & request new medicines related apis ===========
     // request to stock
     app.get("/requestToStock/:email", async (req, res) => {

@@ -353,6 +353,7 @@ async function run() {
       const updateResponse = {
         $set: {
           pharmacist_response: true,
+          delivery_status: "packing",
         },
       };
       const result = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(id) }, updateResponse);
@@ -361,6 +362,12 @@ async function run() {
 
     // all medicine for admin
     app.get("/medicinesOrderByAdmin", async (req, res) => {
+      const result = await orderedMedicinesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // medicine details for admin
+    app.get("/medicinesOrderByAdmin/:id", async (req, res) => {
       const result = await orderedMedicinesCollection.find().toArray();
       res.send(result);
     });

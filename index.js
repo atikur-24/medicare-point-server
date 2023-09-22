@@ -314,6 +314,7 @@ async function run() {
     });
 
     // =========== Medicine Order related apis ===========
+    // for customer order history
     app.get("/medicinesOrder", async (req, res) => {
       const email = req.query.email;
       if (!email) {
@@ -321,6 +322,55 @@ async function run() {
       }
       const query = { email: email };
       const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // medicine ordered apis for pharmacist dashboard (pharmacist)
+    app.get("/medicinesOrderByPharmacistWithResponse", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { pharmacist_email: email, status: "success", pharmacist_response: false };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for all medicine  order history (pharmacist)
+    app.get("/medicinesOrderByPharmacist", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { pharmacist_email: email, status: "success" };
+      const result = await orderedMedicinesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // order conformation (pharmacist)
+    app.patch("/pharmacistResponse", async (req, res) => {
+      const id = req.body.id;
+      const updateResponse = {
+        $set: {
+          pharmacist_response: true,
+          delivery_status: "packing",
+        },
+      };
+      const result = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(id) }, updateResponse);
+      res.send(result);
+    });
+
+    // all medicine for admin
+    app.get("/medicinesOrderByAdmin", async (req, res) => {
+      const result = await orderedMedicinesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // medicine details for admin
+    app.get("/medicinesOrderByAdmin/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await orderedMedicinesCollection.findOne(query);
       res.send(result);
     });
 
@@ -426,8 +476,10 @@ async function run() {
 
     app.get("/labAllItems/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
-      res.send(result);
+      if (id) {
+        const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
+        res.send(result);
+      }
     });
 
     app.get("/labPopularItems", async (req, res) => {
@@ -719,15 +771,18 @@ async function run() {
     app.post("/payment", async (req, res) => {
       const paymentData = req.body;
       const cart = paymentData.cart;
+      const discountCode = paymentData?.discountCode;
       const transId = new ObjectId().toString();
 
       const { name, email, division, district, location, number, totalPayment } = paymentData.paymentDetails;
+
+      const points = ((10 * totalPayment) / 100).toFixed(2);
 
       const data = {
         total_amount: totalPayment,
         currency: "BDT",
         tran_id: transId, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${transId}`,
+        success_url: `http://localhost:5000/payment/success/${transId}?discountCode=${discountCode}&email=${email}&points=${points}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
         cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
@@ -772,6 +827,8 @@ async function run() {
             cartId: _id,
             medicine_Id,
             status: "pending",
+            delivery_status: "pending",
+            pharmacist_response: false,
             medicine_name,
             price,
             quantity,
@@ -795,6 +852,51 @@ async function run() {
 
       app.post("/payment/success/:id", async (req, res) => {
         const transId = req.params.id;
+        const discountCode = req.query.discountCode;
+        const email = req.query.email;
+        const points = req.query.points;
+
+        const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1, promoCodes: 1 } });
+        console.log(userInfo);
+
+        if (!userInfo?.rewardPoints) {
+          const updateInfo = {
+            $set: {
+              rewardPoints: parseFloat(points).toFixed(2),
+            },
+          };
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        } else {
+          const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
+          const updateInfo = {
+            $set: {
+              rewardPoints: newPoint,
+            },
+          };
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
+        if (!userInfo?.promoCodes && discountCode === "WELCOME50") {
+          const updateInfo = {
+            $set: {
+              promoCodes: [discountCode],
+            },
+          };
+          const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
+        if (discountCode === "REWARD50") {
+
+          const updateInfo = {
+            $set: {
+              rewardToDiscount: ""
+            },
+          };
+          const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
+        // return;
+
         orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
 
         orderedItems.forEach(async (item) => {
@@ -851,6 +953,8 @@ async function run() {
       });
     });
 
+
+    // Lab payment api 
     app.post("/labPayment", async (req, res) => {
       const paymentData = req.body;
       const cart = paymentData.cart;
@@ -863,11 +967,13 @@ async function run() {
         totalPayment += singleItem.remaining;
       });
 
+      const points = ((5 * totalPayment) / 100).toFixed(2);
+
       const data = {
         total_amount: totalPayment,
         currency: "BDT",
         tran_id: transId, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${transId}`,
+        success_url: `http://localhost:5000/payment/success/${transId}?email=${email}&points=${points}`,
         fail_url: `http://localhost:5000/payment/fail/${transId}`,
         cancel_url: `http://localhost:5000/payment/fail/${transId}`,
         ipn_url: "http://localhost:3030/ipn",
@@ -905,7 +1011,7 @@ async function run() {
           const singleProduct = {
             transId,
             cartId: cartId,
-            status: "pending",
+            status: "initiate",
             ...cp,
             ...paymentData.personalInfo,
           };
@@ -923,6 +1029,27 @@ async function run() {
         const transId = req.params.id;
         orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
 
+        const email = req.query.email;
+        const points = req.query.points;
+        const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
+
+        if (!userInfo?.rewardPoints) {
+          const updateInfo = {
+            $set: {
+              rewardPoints: parseFloat(points).toFixed(2),
+            },
+          };
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        } else {
+          const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
+          const updateInfo = {
+            $set: {
+              rewardPoints: newPoint,
+            },
+          };
+          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+        }
+
         const url = "dashboard/booked-lab-tests";
         const deliveryTime = "We will collect sample at your chosen time";
 
@@ -932,7 +1059,7 @@ async function run() {
 
           const newStatus = {
             $set: {
-              status: "success",
+              status: "pending",
             },
           };
           // const testName = orderedItems.test_name
@@ -1100,50 +1227,50 @@ async function run() {
     });
 
     // Dashboard home
-    app.get("/dashboard/:email", async (req, res) => {
+    app.get("/dashboardHomeData/:email", async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
 
       if (user?.role === "admin") {
-        const allUsers = await userCollection.find().toArray();
-        const allMedicines = await medicineCollection.find().toArray();
-        const allLabs = await labItemsCollection.find().toArray();
+        const allUsers = await userCollection.find({ role: "user" }, { projection: { role: 1 } }).toArray();
+        const allPharmacists = await userCollection.find({ role: "Pharmacist" }, { projection: { role: 1 } }).toArray();
+        const allAdmin = await userCollection.find({ role: "admin" }, { projection: { role: 1 } }).toArray();
+        const allMedicines = await medicineCollection.find({ status: "approved" }, { projection: { status: 1 } }).toArray();
+        const allLabs = await labItemsCollection.find({}, { projection: { test_name: 1 } }).toArray();
 
         const users = allUsers.length;
+        const pharmacist = allPharmacists.length;
+        const admin = allAdmin.length;
         const medicines = allMedicines.length;
         const labTests = allLabs.length;
         const brands = 8;
         const labs = 15;
-        let pharmacist = 0;
-        allUsers.forEach((singleUser) => {
-          if (singleUser.role === "Pharmacist") {
-            pharmacist = pharmacist + 1;
-          }
-        });
 
-        const info = { users, medicines, labTests, brands, labs, pharmacist };
-
-        const newData = {
-          $set: {
-            info,
-          },
-        };
-        const result = await dashboardDataCollection.updateOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") }, newData);
-        // console.log(result)
-        res.send(result);
+        const info = { users, pharmacist, admin, medicines, labTests, brands, labs };
+        res.send(info);
         return;
       }
-      res.send({ data: "no data found" });
-    });
 
-    app.get("/adminHomeData/:email", async (req, res) => {
-      const email = req.params.email;
-      const user = await userCollection.findOne({ email: email });
+      if (user?.role === "Pharmacist") {
+        const allMedicines = await medicineCollection.find({ status: "approved" }, { projection: { status: 1 } }).toArray();
+        const allOrders = await orderedMedicinesCollection.find({ status: "success" }, { projection: { status: 1 } }).toArray();
+        const allPendingOrders = await orderedMedicinesCollection.find({ status: "success", delivery_status: "pending" }, { projection: { delivery_status: 1 } }).toArray();
+        const allSuccessOrders = await orderedMedicinesCollection.find({ status: "success", delivery_status: "success" }, { projection: { delivery_status: 1 } }).toArray();
+        const allMedicineRequest = await reqNewMedicineCollection.find({ status: "requesting" }, { projection: { status: 1 } }).toArray();
 
-      if (user?.role === "admin") {
-        const result = await dashboardDataCollection.findOne({ _id: new ObjectId("6507132c3a35d462b4f8bc52") });
-        res.send(result);
+        const medicines = allMedicines.length || 10;
+        const orders = allOrders.length || 10;
+        const pendingOrders = allPendingOrders.length || 5;
+        const successOrder = allSuccessOrders.length || 5;
+        const medicineRequest = allMedicineRequest.length || 10;
+
+        const info = { medicines, orders, pendingOrders, successOrder, medicineRequest };
+        res.send(info);
+        return;
+
       }
+
+      res.send({ data: "Unauthorized request!" });
     });
 
     // discount codes
@@ -1203,17 +1330,52 @@ async function run() {
     // checking user's inserted discount code
     app.post("/isValidDiscount", async (req, res) => {
       const data = req.body;
+      const promo = data.promoCode;
+      const email = data.email;
+
+      if (promo === "WELCOME50") {
+        const user = await userCollection.findOne({ email }, { projection: { promoCodes: 1 } });
+        const promoCodes = user?.promoCodes?.includes("WELCOME50");
+        if (promoCodes) {
+          return res.send({ message: "This discount code has been used!" });
+        }
+      }
+
+      if (promo === "REWARD50") {
+        const user = await userCollection.findOne({ email }, { projection: { rewardToDiscount: 1 } });
+        if (user?.rewardToDiscount !== "REWARD50") {
+          return res.send({ message: "This discount code is not for your!" });
+        }
+      }
 
       const query = {
-        discountName: data.promoCode,
+        discountName: promo,
       };
       const isExist = await discountCodesCollection.findOne(query);
-      if (isExist !== null) {
+      if (isExist !== null && isExist.status === "Active") {
         res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
       } else {
         res.send({ message: "Discount code is invalid" });
       }
     });
+
+    // Reward points to discount code converter 
+    app.post("/rewardToDiscount", async (req, res) => {
+      const email = req.body?.email;
+      const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
+
+      const newReward = parseFloat(userInfo?.rewardPoints) - 5000;
+
+      const updateInfo = {
+        $set: {
+          rewardToDiscount: "REWARD50",
+          rewardPoints: parseFloat(newReward)
+        },
+      }
+      const discountCodeCreated = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+      res.send(discountCodeCreated);
+
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

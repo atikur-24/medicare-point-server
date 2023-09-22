@@ -347,10 +347,9 @@ async function run() {
       res.send(result);
     });
 
-    // order conformation (pharmacist)
+    // order conformation (pharmacist and)
     app.patch("/pharmacistResponse/:id", async (req, res) => {
-      console.log(id);
-      console.log(req.body);
+      const id = req.params.id;
       const updateResponse = {
         $set: req.body,
       };

@@ -325,7 +325,7 @@ async function run() {
       res.send(result);
     });
 
-    // medicine ordered apis for pharmacist dashboard (pharmacist)
+    // medicine ordered conformation apis for pharmacist dashboard (pharmacist)
     app.get("/medicinesOrderByPharmacistWithResponse", async (req, res) => {
       const email = req.query.email;
       if (!email) {
@@ -348,13 +348,11 @@ async function run() {
     });
 
     // order conformation (pharmacist)
-    app.patch("/pharmacistResponse", async (req, res) => {
-      const id = req.body.id;
+    app.patch("/pharmacistResponse/:id", async (req, res) => {
+      console.log(id);
+      console.log(req.body);
       const updateResponse = {
-        $set: {
-          pharmacist_response: true,
-          delivery_status: "packing",
-        },
+        $set: req.body,
       };
       const result = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(id) }, updateResponse);
       res.send(result);
@@ -886,10 +884,9 @@ async function run() {
         }
 
         if (discountCode === "REWARD50") {
-
           const updateInfo = {
             $set: {
-              rewardToDiscount: ""
+              rewardToDiscount: "",
             },
           };
           const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
@@ -953,8 +950,7 @@ async function run() {
       });
     });
 
-
-    // Lab payment api 
+    // Lab payment api
     app.post("/labPayment", async (req, res) => {
       const paymentData = req.body;
       const cart = paymentData.cart;
@@ -1267,7 +1263,6 @@ async function run() {
         const info = { medicines, orders, pendingOrders, successOrder, medicineRequest };
         res.send(info);
         return;
-
       }
 
       res.send({ data: "Unauthorized request!" });
@@ -1359,7 +1354,7 @@ async function run() {
       }
     });
 
-    // Reward points to discount code converter 
+    // Reward points to discount code converter
     app.post("/rewardToDiscount", async (req, res) => {
       const email = req.body?.email;
       const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
@@ -1369,13 +1364,12 @@ async function run() {
       const updateInfo = {
         $set: {
           rewardToDiscount: "REWARD50",
-          rewardPoints: parseFloat(newReward)
+          rewardPoints: parseFloat(newReward),
         },
-      }
+      };
       const discountCodeCreated = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
       res.send(discountCodeCreated);
-
-    })
+    });
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {

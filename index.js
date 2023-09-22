@@ -439,6 +439,23 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/labDeliveryStatus", async (req, res) => {
+      const id = req.body?.id;
+      const updatedStatus = {
+        $set: {
+          status: "success"
+        }
+      }
+      const result = await bookedLabTestCollection.updateOne({ _id: new ObjectId(id) }, updatedStatus, { upsert: true });
+      res.send(result);
+    })
+
+    app.delete("/deleteLabTest/:id", async (req, res) => {
+      const id = req.params?.id
+      const result = await bookedLabTestCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
+
     app.get("/labBooking", async (req, res) => {
       const email = req.query.email;
       if (!email) {

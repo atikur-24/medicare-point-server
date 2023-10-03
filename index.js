@@ -40,7 +40,6 @@ async function run() {
     client.connect((err) => {
       if (err) {
         console.error(err);
-        console.log("HELLO ERRRRRRRRRRRRRRRRRR RRRRRR");
         return;
       }
     });
@@ -320,7 +319,7 @@ async function run() {
       if (!email) {
         res.send({ message: "Email Not Found" });
       }
-      const query = { email: email };
+      const query = { email: email, status: "success" };
       const result = await orderedMedicinesCollection.find(query).toArray();
       res.send(result);
     });
@@ -347,8 +346,8 @@ async function run() {
       res.send(result);
     });
 
-    // order conformation (pharmacist and)
-    app.patch("/pharmacistResponse/:id", async (req, res) => {
+    // order conformation (pharmacist) and update delivery status (pharmacist/admin/user)
+    app.patch("/deliveryStatus/:id", async (req, res) => {
       const id = req.params.id;
       const updateResponse = {
         $set: req.body,
@@ -368,6 +367,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await orderedMedicinesCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.delete("/medicinesOrderByAdmin/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await orderedMedicinesCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -443,18 +449,18 @@ async function run() {
       const id = req.body?.id;
       const updatedStatus = {
         $set: {
-          status: "success"
-        }
-      }
+          status: "success",
+        },
+      };
       const result = await bookedLabTestCollection.updateOne({ _id: new ObjectId(id) }, updatedStatus, { upsert: true });
       res.send(result);
-    })
+    });
 
     app.delete("/deleteLabTest/:id", async (req, res) => {
-      const id = req.params?.id
+      const id = req.params?.id;
       const result = await bookedLabTestCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
-    })
+    });
 
     app.get("/labBooking", async (req, res) => {
       const email = req.query.email;

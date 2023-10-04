@@ -18,5 +18,8 @@
     "moment": "^2.29.4",
     "mongodb": "^5.7.0",
     "sslcommerz-lts": "^1.1.0"
+  },
+  "devDependencies": {
+    "prettier": "3.0.3"
   }
 }

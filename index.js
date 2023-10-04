@@ -49,7 +49,8 @@ async function run() {
     const medicineCollection = database.collection("medicines");
     const mediCartCollection = database.collection("medicinesCart");
     const orderedMedicinesCollection = database.collection("orderedMedicines");
-    const reqToStockMedicineCollection = database.collection("requestToStockMedi");
+    const reqToStockMedicineCollection =
+      database.collection("requestToStockMedi");
     const reqNewMedicineCollection = database.collection("reqNewMedi");
     // lab test
     const labCategoryCollection = database.collection("labCategories");
@@ -58,7 +59,8 @@ async function run() {
     const bookedLabTestCollection = database.collection("bookedLabTest");
     // users
     const userCollection = database.collection("users");
-    const pharmacyRegistrationApplication = database.collection("P.R. Applications");
+    const pharmacyRegistrationApplication =
+      database.collection("P.R. Applications");
     const pharmacistCollection = database.collection("pharmacists");
     // health tips & blog
     const healthTipsCollection = database.collection("healthTips");
@@ -73,21 +75,43 @@ async function run() {
 
     // =========== Medicines Related apis ===========
     app.get("/all-medicines", async (req, res) => {
-      const needData = { _id: 1, medicine_name: 1, image: 1, available_quantity: 1, sellQuantity: 1, pharmacist_name: 1, pharmacist_email: 1, status: 1 };
-      const result = await medicineCollection.find({}, { projection: needData }).toArray();
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        available_quantity: 1,
+        sellQuantity: 1,
+        pharmacist_name: 1,
+        pharmacist_email: 1,
+        status: 1,
+      };
+      const result = await medicineCollection
+        .find({}, { projection: needData })
+        .toArray();
       res.send(result);
     });
 
     // home page search medicines
     app.get("/searchMedicinesByName", async (req, res) => {
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1 };
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        price: 1,
+        discount: 1,
+        category: 1,
+        available_quantity: 1,
+        sellQuantity: 1,
+      };
       const sbn = req.query?.name;
       let query = { status: "approved" };
 
       if (sbn) {
         query = { ...query, medicine_name: { $regex: sbn, $options: "i" } };
       }
-      const result = await medicineCollection.find(query, { projection: needData }).toArray();
+      const result = await medicineCollection
+        .find(query, { projection: needData })
+        .toArray();
       res.send(result);
     });
 
@@ -95,7 +119,19 @@ async function run() {
     app.get("/medicines", async (req, res) => {
       const query = { status: "approved" };
       let sortObject = {};
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        price: 1,
+        discount: 1,
+        category: 1,
+        available_quantity: 1,
+        sellQuantity: 1,
+        pharmacist_email: 1,
+        rating: 1,
+        order_quantity: 1,
+      };
 
       switch (req.query.sort) {
         case "phtl":
@@ -124,42 +160,82 @@ async function run() {
       //   .toArray();
 
       // FOR FINDING DATA WITH SPECIFIC FIELD
-      const result = await medicineCollection.find(query, { projection: needData }).sort(sortObject).toArray();
+      const result = await medicineCollection
+        .find(query, { projection: needData })
+        .sort(sortObject)
+        .toArray();
       res.send(result);
     });
 
     // highest selling medicines
     app.get("/highestSelling-medicines", async (req, res) => {
       const query = { status: "approved" };
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        price: 1,
+        discount: 1,
+        category: 1,
+        available_quantity: 1,
+        sellQuantity: 1,
+        pharmacist_email: 1,
+        rating: 1,
+        order_quantity: 1,
+      };
       const sorting = {
         sort: { sellQuantity: -1 },
         limit: 10,
       };
-      const result = await medicineCollection.find(query, { projection: needData, ...sorting }).toArray();
+      const result = await medicineCollection
+        .find(query, { projection: needData, ...sorting })
+        .toArray();
       res.send(result);
     });
 
     // top rated medicines
     app.get("/topRated-medicines", async (req, res) => {
       const query = { status: "approved" };
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, rating: 1 };
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        price: 1,
+        discount: 1,
+        rating: 1,
+      };
       const sorting = {
         sort: { rating: -1 },
         limit: 5,
       };
-      const result = await medicineCollection.find(query, { projection: needData, ...sorting }).toArray();
+      const result = await medicineCollection
+        .find(query, { projection: needData, ...sorting })
+        .toArray();
       res.send(result);
     });
 
     app.get("/medicinesc", async (req, res) => {
-      const needData = { _id: 1, medicine_name: 1, image: 1, price: 1, discount: 1, category: 1, available_quantity: 1, sellQuantity: 1, pharmacist_email: 1, rating: 1, order_quantity: 1 };
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        price: 1,
+        discount: 1,
+        category: 1,
+        available_quantity: 1,
+        sellQuantity: 1,
+        pharmacist_email: 1,
+        rating: 1,
+        order_quantity: 1,
+      };
       const category = req.query.category;
       const query = {
         "category.value": category,
         status: "approved",
       };
-      const result = await medicineCollection.find(query, { projection: needData }).toArray();
+      const result = await medicineCollection
+        .find(query, { projection: needData })
+        .toArray();
       res.send(result);
     });
 
@@ -171,13 +247,22 @@ async function run() {
     });
 
     app.get("/pharmacistMedicines", async (req, res) => {
-      const needData = { _id: 1, medicine_name: 1, image: 1, available_quantity: 1, sellQuantity: 1, status: 1 };
+      const needData = {
+        _id: 1,
+        medicine_name: 1,
+        image: 1,
+        available_quantity: 1,
+        sellQuantity: 1,
+        status: 1,
+      };
       const email = req.query.email;
       if (!email) {
         res.send([]);
       }
       const query = { pharmacist_email: email };
-      const result = await medicineCollection.find(query, { projection: needData }).toArray();
+      const result = await medicineCollection
+        .find(query, { projection: needData })
+        .toArray();
       res.send(result);
     });
 
@@ -212,8 +297,16 @@ async function run() {
         },
       };
 
-      const result1 = await medicineCollection.updateOne(filter, updatedRating, options);
-      const result2 = await medicineCollection.updateOne(filter, updatedRatings, options);
+      const result1 = await medicineCollection.updateOne(
+        filter,
+        updatedRating,
+        options,
+      );
+      const result2 = await medicineCollection.updateOne(
+        filter,
+        updatedRatings,
+        options,
+      );
       res.send(result2);
     });
 
@@ -227,7 +320,11 @@ async function run() {
       const updatedMedicine = {
         $set: { ...updatedData },
       };
-      const result = await medicineCollection.updateOne(filter, updatedMedicine, options);
+      const result = await medicineCollection.updateOne(
+        filter,
+        updatedMedicine,
+        options,
+      );
       res.send(result);
     });
 
@@ -255,7 +352,9 @@ async function run() {
       const newFeedback = {
         $set: { feedback: updatedFeedback.feedback },
       };
-      const result = await medicineCollection.updateOne(query, newFeedback, { upsert: true });
+      const result = await medicineCollection.updateOne(query, newFeedback, {
+        upsert: true,
+      });
       res.send(result);
     });
 
@@ -272,7 +371,10 @@ async function run() {
 
     app.post("/medicineCarts", async (req, res) => {
       const medicine = req.body;
-      const filterMedicine = { medicine_Id: medicine.medicine_Id, email: medicine.email };
+      const filterMedicine = {
+        medicine_Id: medicine.medicine_Id,
+        email: medicine.email,
+      };
       const singleMedicine = await mediCartCollection.findOne(filterMedicine);
       if (singleMedicine) {
         const updateDoc = {
@@ -280,7 +382,10 @@ async function run() {
             quantity: singleMedicine.quantity + medicine.quantity,
           },
         };
-        const updateQuantity = await mediCartCollection.updateOne(filterMedicine, updateDoc);
+        const updateQuantity = await mediCartCollection.updateOne(
+          filterMedicine,
+          updateDoc,
+        );
         res.send(updateQuantity);
       } else {
         const result = await mediCartCollection.insertOne(medicine);
@@ -330,7 +435,11 @@ async function run() {
       if (!email) {
         res.send({ message: "Email Not Found" });
       }
-      const query = { pharmacist_email: email, status: "success", pharmacist_response: false };
+      const query = {
+        pharmacist_email: email,
+        status: "success",
+        pharmacist_response: false,
+      };
       const result = await orderedMedicinesCollection.find(query).toArray();
       res.send(result);
     });
@@ -352,7 +461,10 @@ async function run() {
       const updateResponse = {
         $set: req.body,
       };
-      const result = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(id) }, updateResponse);
+      const result = await orderedMedicinesCollection.updateOne(
+        { _id: new ObjectId(id) },
+        updateResponse,
+      );
       res.send(result);
     });
 
@@ -391,8 +503,11 @@ async function run() {
 
     app.post("/requestToStock", async (req, res) => {
       const medicineRequest = req.body;
-      const filterMediReq = { reqByMedicine_Id: medicineRequest.reqByMedicine_Id };
-      const existRequest = await reqToStockMedicineCollection.findOne(filterMediReq);
+      const filterMediReq = {
+        reqByMedicine_Id: medicineRequest.reqByMedicine_Id,
+      };
+      const existRequest =
+        await reqToStockMedicineCollection.findOne(filterMediReq);
       if (existRequest) {
         const updateCountDate = {
           $set: {
@@ -400,10 +515,14 @@ async function run() {
             date: existRequest.date,
           },
         };
-        const rquestUpdate = await reqToStockMedicineCollection.updateOne(filterMediReq, updateCountDate);
+        const rquestUpdate = await reqToStockMedicineCollection.updateOne(
+          filterMediReq,
+          updateCountDate,
+        );
         res.send(rquestUpdate);
       } else {
-        const result = await reqToStockMedicineCollection.insertOne(medicineRequest);
+        const result =
+          await reqToStockMedicineCollection.insertOne(medicineRequest);
         res.send(result);
       }
     });
@@ -452,13 +571,19 @@ async function run() {
           status: "success",
         },
       };
-      const result = await bookedLabTestCollection.updateOne({ _id: new ObjectId(id) }, updatedStatus, { upsert: true });
+      const result = await bookedLabTestCollection.updateOne(
+        { _id: new ObjectId(id) },
+        updatedStatus,
+        { upsert: true },
+      );
       res.send(result);
     });
 
     app.delete("/deleteLabTest/:id", async (req, res) => {
       const id = req.params?.id;
-      const result = await bookedLabTestCollection.deleteOne({ _id: new ObjectId(id) });
+      const result = await bookedLabTestCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
@@ -474,7 +599,9 @@ async function run() {
 
     app.get("/labCategory/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await labCategoryCollection.find({ _id: new ObjectId(id) }).toArray();
+      const result = await labCategoryCollection
+        .find({ _id: new ObjectId(id) })
+        .toArray();
       res.send(result);
     });
 
@@ -497,7 +624,9 @@ async function run() {
     app.get("/labAllItems/:id", async (req, res) => {
       const id = req.params.id;
       if (id) {
-        const result = await labItemsCollection.findOne({ _id: new ObjectId(id) });
+        const result = await labItemsCollection.findOne({
+          _id: new ObjectId(id),
+        });
         res.send(result);
       }
     });
@@ -513,7 +642,9 @@ async function run() {
     });
 
     app.get("/labItems/:category", async (req, res) => {
-      const result = await labItemsCollection.find({ category_name: req.params.category }).toArray();
+      const result = await labItemsCollection
+        .find({ category_name: req.params.category })
+        .toArray();
       res.send(result);
     });
 
@@ -544,7 +675,11 @@ async function run() {
         // $set: { image_url, PhoneNumber, labNames, labTestDetails, popularCategory, category, price, test_name, discount, city, remaining }
         $set: { ...data },
       };
-      const result = await labItemsCollection.updateOne(filter, updatedLabTest, options);
+      const result = await labItemsCollection.updateOne(
+        filter,
+        updatedLabTest,
+        options,
+      );
       res.send(result);
     });
 
@@ -566,14 +701,24 @@ async function run() {
 
     app.delete("/labCart/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await labCartCollection.deleteOne({ _id: new ObjectId(id) });
+      const result = await labCartCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
     // =========== Health Tips Related apis ===========
     app.get("/allHealthTips", async (req, res) => {
-      const unnecessaryData = { prevention: 0, cure: 0, doctorDepartment: 0, date: 0, doctorName: 0 };
-      const result = await healthTipsCollection.find({}, { projection: unnecessaryData }).toArray();
+      const unnecessaryData = {
+        prevention: 0,
+        cure: 0,
+        doctorDepartment: 0,
+        date: 0,
+        doctorName: 0,
+      };
+      const result = await healthTipsCollection
+        .find({}, { projection: unnecessaryData })
+        .toArray();
       res.send(result);
     });
 
@@ -585,7 +730,9 @@ async function run() {
 
     app.get("/allHealthTips/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await healthTipsCollection.findOne({ _id: new ObjectId(id) });
+      const result = await healthTipsCollection.findOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
@@ -600,21 +747,49 @@ async function run() {
       const id = req.params.id;
       // const { body } = req.body;
       console.log(id, req.body);
-      const { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date } = req.body;
+      const {
+        category,
+        name,
+        image,
+        type,
+        cause,
+        cure,
+        prevention,
+        doctorDepartment,
+        doctorName,
+        date,
+      } = req.body;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
 
       const updatedHealthTips = {
-        $set: { category, name, image, type, cause, cure, prevention, doctorDepartment, doctorName, date },
+        $set: {
+          category,
+          name,
+          image,
+          type,
+          cause,
+          cure,
+          prevention,
+          doctorDepartment,
+          doctorName,
+          date,
+        },
       };
-      const result = await healthTipsCollection.updateOne(filter, updatedHealthTips, options);
+      const result = await healthTipsCollection.updateOne(
+        filter,
+        updatedHealthTips,
+        options,
+      );
       res.send(result);
     });
 
     // =========== Blog Related apis ===========
     app.get("/blogs", async (req, res) => {
       const unnecessaryData = { content_details: 0, author: 0 };
-      const result = await blogCollection.find({}, { projection: unnecessaryData }).toArray();
+      const result = await blogCollection
+        .find({}, { projection: unnecessaryData })
+        .toArray();
       res.send(result);
     });
 
@@ -651,7 +826,8 @@ async function run() {
     // =========== Pharmacist Related apis ===========
     app.post("/pharmacyRegistrationApplication", async (req, res) => {
       const newApplication = req.body;
-      const result = await pharmacyRegistrationApplication.insertOne(newApplication);
+      const result =
+        await pharmacyRegistrationApplication.insertOne(newApplication);
       res.send(result);
     });
 
@@ -677,14 +853,21 @@ async function run() {
           applicationType: req?.body?.applicationType,
         },
       };
-      const result = await pharmacyRegistrationApplication.updateOne(query, newApplication);
+      const result = await pharmacyRegistrationApplication.updateOne(
+        query,
+        newApplication,
+      );
       const updateUser = {
         $set: {
           role: req?.body?.role,
           pharmacistDetail: req?.body?.pharmacistDetail,
         },
       };
-      const result2 = await userCollection.updateOne({ email: email }, updateUser, { upsert: true });
+      const result2 = await userCollection.updateOne(
+        { email: email },
+        updateUser,
+        { upsert: true },
+      );
       res.send({ result, result2 });
     });
 
@@ -721,10 +904,14 @@ async function run() {
       }
 
       // Update the user's profile data
-      const updateResult = await userCollection.updateOne(query, { $set: updatedUserData });
+      const updateResult = await userCollection.updateOne(query, {
+        $set: updatedUserData,
+      });
 
       if (updateResult.modifiedCount === 0) {
-        return res.status(500).json({ message: "Failed to update user profile" });
+        return res
+          .status(500)
+          .json({ message: "Failed to update user profile" });
       }
 
       res.status(200).json({ message: "User profile updated successfully" });
@@ -794,7 +981,15 @@ async function run() {
       const discountCode = paymentData?.discountCode;
       const transId = new ObjectId().toString();
 
-      const { name, email, division, district, location, number, totalPayment } = paymentData.paymentDetails;
+      const {
+        name,
+        email,
+        division,
+        district,
+        location,
+        number,
+        totalPayment,
+      } = paymentData.paymentDetails;
 
       const points = ((10 * totalPayment) / 100).toFixed(2);
 
@@ -838,7 +1033,17 @@ async function run() {
 
       sslcz.init(data).then((apiResponse) => {
         const a = cart.map(async (cp) => {
-          const { _id, medicine_Id, medicine_name, price, quantity, discount, email, category, image } = cp;
+          const {
+            _id,
+            medicine_Id,
+            medicine_name,
+            price,
+            quantity,
+            discount,
+            email,
+            category,
+            image,
+          } = cp;
           const singleProduct = {
             dateAndTime,
             expectedDate: [oneDaysAhead, threeDaysAhead],
@@ -862,7 +1067,8 @@ async function run() {
             location,
             number,
           };
-          const createOrder = await orderedMedicinesCollection.insertOne(singleProduct);
+          const createOrder =
+            await orderedMedicinesCollection.insertOne(singleProduct);
         });
         // Redirect the user to payment gateway
         let GatewayPageURL = apiResponse.GatewayPageURL;
@@ -876,7 +1082,10 @@ async function run() {
         const email = req.query.email;
         const points = req.query.points;
 
-        const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1, promoCodes: 1 } });
+        const userInfo = await userCollection.findOne(
+          { email: email },
+          { projection: { rewardPoints: 1, promoCodes: 1 } },
+        );
         console.log(userInfo);
 
         if (!userInfo?.rewardPoints) {
@@ -885,15 +1094,25 @@ async function run() {
               rewardPoints: parseFloat(points).toFixed(2),
             },
           };
-          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+          const addedReward = await userCollection.updateOne(
+            { email: email },
+            updateInfo,
+            { upsert: true },
+          );
         } else {
-          const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
+          const newPoint = (
+            parseFloat(points) + parseFloat(userInfo.rewardPoints)
+          ).toFixed(2);
           const updateInfo = {
             $set: {
               rewardPoints: newPoint,
             },
           };
-          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+          const addedReward = await userCollection.updateOne(
+            { email: email },
+            updateInfo,
+            { upsert: true },
+          );
         }
 
         if (!userInfo?.promoCodes && discountCode === "WELCOME50") {
@@ -902,7 +1121,11 @@ async function run() {
               promoCodes: [discountCode],
             },
           };
-          const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+          const updatePromo = await userCollection.updateOne(
+            { email: email },
+            updateInfo,
+            { upsert: true },
+          );
         }
 
         if (discountCode === "REWARD50") {
@@ -911,12 +1134,18 @@ async function run() {
               rewardToDiscount: "",
             },
           };
-          const updatePromo = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+          const updatePromo = await userCollection.updateOne(
+            { email: email },
+            updateInfo,
+            { upsert: true },
+          );
         }
 
         // return;
 
-        orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
+        orderedItems = await orderedMedicinesCollection
+          .find({ transId })
+          .toArray();
 
         orderedItems.forEach(async (item) => {
           const query = { _id: new ObjectId(item.medicine_Id) };
@@ -949,10 +1178,20 @@ async function run() {
               sellQuantity: result1.sellQuantity + item.quantity,
             },
           };
-          const result2 = await orderedMedicinesCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
-          const result3 = await medicineCollection.updateOne({ _id: new ObjectId(item.medicine_Id) }, updateQuantity);
-          const result4 = await mediCartCollection.deleteOne({ _id: new ObjectId(item.cartId) });
-          const storeNotification = await imagesNotifications.insertOne(notificationData);
+          const result2 = await orderedMedicinesCollection.updateOne(
+            { _id: new ObjectId(item._id.toString()) },
+            newStatus,
+            options,
+          );
+          const result3 = await medicineCollection.updateOne(
+            { _id: new ObjectId(item.medicine_Id) },
+            updateQuantity,
+          );
+          const result4 = await mediCartCollection.deleteOne({
+            _id: new ObjectId(item.cartId),
+          });
+          const storeNotification =
+            await imagesNotifications.insertOne(notificationData);
 
           // console.log("a", result2, result3, result4)
         });
@@ -962,10 +1201,14 @@ async function run() {
 
       app.post("/payment/fail/:id", async (req, res) => {
         const transId = req.params.id;
-        orderedItems = await orderedMedicinesCollection.find({ transId }).toArray();
+        orderedItems = await orderedMedicinesCollection
+          .find({ transId })
+          .toArray();
 
         orderedItems.forEach(async (item) => {
-          const result = await orderedMedicinesCollection.deleteOne({ _id: new ObjectId(item._id.toString()) });
+          const result = await orderedMedicinesCollection.deleteOne({
+            _id: new ObjectId(item._id.toString()),
+          });
         });
 
         res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
@@ -978,7 +1221,8 @@ async function run() {
       const cart = paymentData.cart;
       const transId = new ObjectId().toString();
 
-      const { name, mobile, email, address, dateTime, age, note, area } = paymentData.personalInfo;
+      const { name, mobile, email, address, dateTime, age, note, area } =
+        paymentData.personalInfo;
 
       let totalPayment = 0.0 + 50.0; // or report
       cart.forEach((singleItem) => {
@@ -1034,7 +1278,8 @@ async function run() {
             ...paymentData.personalInfo,
           };
 
-          const createOrder = await bookedLabTestCollection.insertOne(singleProduct);
+          const createOrder =
+            await bookedLabTestCollection.insertOne(singleProduct);
         });
 
         // Redirect the user to payment gateway
@@ -1045,11 +1290,16 @@ async function run() {
 
       app.post("/payment/success/:id", async (req, res) => {
         const transId = req.params.id;
-        orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
+        orderedItems = await bookedLabTestCollection
+          .find({ transId })
+          .toArray();
 
         const email = req.query.email;
         const points = req.query.points;
-        const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
+        const userInfo = await userCollection.findOne(
+          { email: email },
+          { projection: { rewardPoints: 1 } },
+        );
 
         if (!userInfo?.rewardPoints) {
           const updateInfo = {
@@ -1057,15 +1307,25 @@ async function run() {
               rewardPoints: parseFloat(points).toFixed(2),
             },
           };
-          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+          const addedReward = await userCollection.updateOne(
+            { email: email },
+            updateInfo,
+            { upsert: true },
+          );
         } else {
-          const newPoint = (parseFloat(points) + parseFloat(userInfo.rewardPoints)).toFixed(2);
+          const newPoint = (
+            parseFloat(points) + parseFloat(userInfo.rewardPoints)
+          ).toFixed(2);
           const updateInfo = {
             $set: {
               rewardPoints: newPoint,
             },
           };
-          const addedReward = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+          const addedReward = await userCollection.updateOne(
+            { email: email },
+            updateInfo,
+            { upsert: true },
+          );
         }
 
         const url = "dashboard/booked-lab-tests";
@@ -1099,10 +1359,21 @@ async function run() {
           };
           const options = { upsert: true };
 
-          const result2 = await bookedLabTestCollection.updateOne({ _id: new ObjectId(item._id.toString()) }, newStatus, options);
-          const result3 = await labItemsCollection.updateOne({ _id: new ObjectId(item.lab_id) }, updateQuantity, options);
-          const result4 = await labCartCollection.deleteOne({ _id: new ObjectId(item.cartId) });
-          const storeNotification = await imagesNotifications.insertOne(notificationData2);
+          const result2 = await bookedLabTestCollection.updateOne(
+            { _id: new ObjectId(item._id.toString()) },
+            newStatus,
+            options,
+          );
+          const result3 = await labItemsCollection.updateOne(
+            { _id: new ObjectId(item.lab_id) },
+            updateQuantity,
+            options,
+          );
+          const result4 = await labCartCollection.deleteOne({
+            _id: new ObjectId(item.cartId),
+          });
+          const storeNotification =
+            await imagesNotifications.insertOne(notificationData2);
         });
 
         res.redirect(`http://localhost:5173/paymentSuccess/${req.params.id}`);
@@ -1110,10 +1381,14 @@ async function run() {
 
       app.post("/payment/fail/:id", async (req, res) => {
         const transId = req.params.id;
-        orderedItems = await bookedLabTestCollection.find({ transId }).toArray();
+        orderedItems = await bookedLabTestCollection
+          .find({ transId })
+          .toArray();
 
         orderedItems.forEach(async (item) => {
-          const result = await bookedLabTestCollection.deleteOne({ _id: new ObjectId(item._id.toString()) });
+          const result = await bookedLabTestCollection.deleteOne({
+            _id: new ObjectId(item._id.toString()),
+          });
         });
 
         res.redirect(`http://localhost:5173/paymentFailed/${req.params.id}`);
@@ -1151,7 +1426,9 @@ async function run() {
 
     app.delete("/images/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await imagesCollection.deleteOne({ _id: new ObjectId(id) });
+      const result = await imagesCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
@@ -1160,10 +1437,17 @@ async function run() {
       const email = req.query?.email;
       const role = req.query?.role;
       let query = {
-        $or: [{ email: email }, { receiver: role }, { pharmacist_email: email }],
+        $or: [
+          { email: email },
+          { receiver: role },
+          { pharmacist_email: email },
+        ],
       };
 
-      const result = await imagesNotifications.find(query).sort({ date: -1 }).toArray();
+      const result = await imagesNotifications
+        .find(query)
+        .sort({ date: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -1176,7 +1460,9 @@ async function run() {
 
     app.delete("/notifications/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await imagesNotifications.deleteOne({ _id: new ObjectId(id) });
+      const result = await imagesNotifications.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
@@ -1189,7 +1475,11 @@ async function run() {
             read: "yes",
           },
         };
-        const result = imagesNotifications.updateOne({ _id: new ObjectId(d) }, updateStatus, { upsert: true });
+        const result = imagesNotifications.updateOne(
+          { _id: new ObjectId(d) },
+          updateStatus,
+          { upsert: true },
+        );
       });
       res.send("Make all notifications as read");
     });
@@ -1204,7 +1494,10 @@ async function run() {
 
     // prescription
     app.get("/prescriptions", async (req, res) => {
-      const result = await prescriptionCollection.find().sort({ date: -1 }).toArray();
+      const result = await prescriptionCollection
+        .find()
+        .sort({ date: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -1222,7 +1515,11 @@ async function run() {
         },
       };
       const options = { upsert: true };
-      const result2 = await prescriptionCollection.updateOne({ _id: new ObjectId(data.id) }, newStatus, options);
+      const result2 = await prescriptionCollection.updateOne(
+        { _id: new ObjectId(data.id) },
+        newStatus,
+        options,
+      );
 
       const notificationData = {
         name: "Medicines has been added to your cart",
@@ -1240,7 +1537,9 @@ async function run() {
 
     app.delete("/prescriptions/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await prescriptionCollection.deleteOne({ _id: new ObjectId(id) });
+      const result = await prescriptionCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
@@ -1250,11 +1549,21 @@ async function run() {
       const user = await userCollection.findOne({ email: email });
 
       if (user?.role === "admin") {
-        const allUsers = await userCollection.find({ role: "user" }, { projection: { role: 1 } }).toArray();
-        const allPharmacists = await userCollection.find({ role: "Pharmacist" }, { projection: { role: 1 } }).toArray();
-        const allAdmin = await userCollection.find({ role: "admin" }, { projection: { role: 1 } }).toArray();
-        const allMedicines = await medicineCollection.find({ status: "approved" }, { projection: { status: 1 } }).toArray();
-        const allLabs = await labItemsCollection.find({}, { projection: { test_name: 1 } }).toArray();
+        const allUsers = await userCollection
+          .find({ role: "user" }, { projection: { role: 1 } })
+          .toArray();
+        const allPharmacists = await userCollection
+          .find({ role: "Pharmacist" }, { projection: { role: 1 } })
+          .toArray();
+        const allAdmin = await userCollection
+          .find({ role: "admin" }, { projection: { role: 1 } })
+          .toArray();
+        const allMedicines = await medicineCollection
+          .find({ status: "approved" }, { projection: { status: 1 } })
+          .toArray();
+        const allLabs = await labItemsCollection
+          .find({}, { projection: { test_name: 1 } })
+          .toArray();
 
         const users = allUsers.length;
         const pharmacist = allPharmacists.length;
@@ -1264,17 +1573,41 @@ async function run() {
         const brands = 8;
         const labs = 15;
 
-        const info = { users, pharmacist, admin, medicines, labTests, brands, labs };
+        const info = {
+          users,
+          pharmacist,
+          admin,
+          medicines,
+          labTests,
+          brands,
+          labs,
+        };
         res.send(info);
         return;
       }
 
       if (user?.role === "Pharmacist") {
-        const allMedicines = await medicineCollection.find({ status: "approved" }, { projection: { status: 1 } }).toArray();
-        const allOrders = await orderedMedicinesCollection.find({ status: "success" }, { projection: { status: 1 } }).toArray();
-        const allPendingOrders = await orderedMedicinesCollection.find({ status: "success", delivery_status: "pending" }, { projection: { delivery_status: 1 } }).toArray();
-        const allSuccessOrders = await orderedMedicinesCollection.find({ status: "success", delivery_status: "success" }, { projection: { delivery_status: 1 } }).toArray();
-        const allMedicineRequest = await reqNewMedicineCollection.find({ status: "requesting" }, { projection: { status: 1 } }).toArray();
+        const allMedicines = await medicineCollection
+          .find({ status: "approved" }, { projection: { status: 1 } })
+          .toArray();
+        const allOrders = await orderedMedicinesCollection
+          .find({ status: "success" }, { projection: { status: 1 } })
+          .toArray();
+        const allPendingOrders = await orderedMedicinesCollection
+          .find(
+            { status: "success", delivery_status: "pending" },
+            { projection: { delivery_status: 1 } },
+          )
+          .toArray();
+        const allSuccessOrders = await orderedMedicinesCollection
+          .find(
+            { status: "success", delivery_status: "success" },
+            { projection: { delivery_status: 1 } },
+          )
+          .toArray();
+        const allMedicineRequest = await reqNewMedicineCollection
+          .find({ status: "requesting" }, { projection: { status: 1 } })
+          .toArray();
 
         const medicines = allMedicines.length || 10;
         const orders = allOrders.length || 10;
@@ -1282,7 +1615,13 @@ async function run() {
         const successOrder = allSuccessOrders.length || 5;
         const medicineRequest = allMedicineRequest.length || 10;
 
-        const info = { medicines, orders, pendingOrders, successOrder, medicineRequest };
+        const info = {
+          medicines,
+          orders,
+          pendingOrders,
+          successOrder,
+          medicineRequest,
+        };
         res.send(info);
         return;
       }
@@ -1333,13 +1672,18 @@ async function run() {
         },
       };
 
-      const result = await discountCodesCollection.updateOne({ _id: new ObjectId(id) }, updatedData);
+      const result = await discountCodesCollection.updateOne(
+        { _id: new ObjectId(id) },
+        updatedData,
+      );
       res.send(result);
     });
 
     app.delete("/discountCodes/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await discountCodesCollection.deleteOne({ _id: new ObjectId(id) });
+      const result = await discountCodesCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
       return;
     });
@@ -1351,7 +1695,10 @@ async function run() {
       const email = data.email;
 
       if (promo === "WELCOME50") {
-        const user = await userCollection.findOne({ email }, { projection: { promoCodes: 1 } });
+        const user = await userCollection.findOne(
+          { email },
+          { projection: { promoCodes: 1 } },
+        );
         const promoCodes = user?.promoCodes?.includes("WELCOME50");
         if (promoCodes) {
           return res.send({ message: "This discount code has been used!" });
@@ -1359,7 +1706,10 @@ async function run() {
       }
 
       if (promo === "REWARD50") {
-        const user = await userCollection.findOne({ email }, { projection: { rewardToDiscount: 1 } });
+        const user = await userCollection.findOne(
+          { email },
+          { projection: { rewardToDiscount: 1 } },
+        );
         if (user?.rewardToDiscount !== "REWARD50") {
           return res.send({ message: "This discount code is not for your!" });
         }
@@ -1370,7 +1720,12 @@ async function run() {
       };
       const isExist = await discountCodesCollection.findOne(query);
       if (isExist !== null && isExist.status === "Active") {
-        res.send({ message: "Discount code used successfully", success: true, discountType: isExist.discountType, discount: parseFloat(isExist.discount) });
+        res.send({
+          message: "Discount code used successfully",
+          success: true,
+          discountType: isExist.discountType,
+          discount: parseFloat(isExist.discount),
+        });
       } else {
         res.send({ message: "Discount code is invalid" });
       }
@@ -1379,7 +1734,10 @@ async function run() {
     // Reward points to discount code converter
     app.post("/rewardToDiscount", async (req, res) => {
       const email = req.body?.email;
-      const userInfo = await userCollection.findOne({ email: email }, { projection: { rewardPoints: 1 } });
+      const userInfo = await userCollection.findOne(
+        { email: email },
+        { projection: { rewardPoints: 1 } },
+      );
 
       const newReward = parseFloat(userInfo?.rewardPoints) - 5000;
 
@@ -1389,11 +1747,17 @@ async function run() {
           rewardPoints: parseFloat(newReward),
         },
       };
-      const discountCodeCreated = await userCollection.updateOne({ email: email }, updateInfo, { upsert: true });
+      const discountCodeCreated = await userCollection.updateOne(
+        { email: email },
+        updateInfo,
+        { upsert: true },
+      );
       res.send(discountCodeCreated);
     });
 
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!",
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
